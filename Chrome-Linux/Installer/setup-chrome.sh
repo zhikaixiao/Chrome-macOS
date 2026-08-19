@@ -108,7 +108,12 @@ try_install_via_deb() {
         (cd "$extract_dir" && ar -x "$temp_deb" && tar -xf data.tar.*) && extract_success=true
     fi
 
-    if [ "$extract_success" = false ] || [ ! -d "$extract_dir/opt/google/chrome" ]; then
+    local chrome_src=""
+    if [ -d "$extract_dir/opt/google/chrome" ]; then
+        chrome_src="$extract_dir/opt/google/chrome"
+    fi
+
+    if [ -z "$chrome_src" ] || [ "$extract_success" = false ]; then
         echo -e "${YELLOW}  ! DEB 解包异常，切换至 RPM 备用引擎...${NC}"
         rm -rf "$temp_deb" "$extract_dir"
         return 1
@@ -116,8 +121,8 @@ try_install_via_deb() {
 
     echo -e "${BLUE}[4/4] 部署 Google Chrome 核心程序到便携目录...${NC}"
     rm -rf "$CHROME_BIN_DIR"/*
-    cp -R "$extract_dir/opt/google/chrome"/* "$CHROME_BIN_DIR/"
-    chmod +x "$CHROME_BIN_DIR/google-chrome" "$CHROME_BIN_DIR/chrome" 2>/dev/null || true
+    cp -R "$chrome_src"/* "$CHROME_BIN_DIR/"
+    chmod -R 755 "$CHROME_BIN_DIR" 2>/dev/null || true
 
     rm -rf "$temp_deb" "$extract_dir"
     return 0
@@ -142,7 +147,12 @@ try_install_via_rpm() {
         (cd "$extract_dir" && rpm2cpio "$temp_rpm" | cpio -idmv >/dev/null 2>&1)
     fi
 
-    if [ ! -d "$extract_dir/opt/google/chrome" ]; then
+    local chrome_src=""
+    if [ -d "$extract_dir/opt/google/chrome" ]; then
+        chrome_src="$extract_dir/opt/google/chrome"
+    fi
+
+    if [ -z "$chrome_src" ]; then
         echo -e "${RED}❌ RPM 解包失败${NC}"
         rm -rf "$temp_rpm" "$extract_dir"
         return 1
@@ -150,8 +160,8 @@ try_install_via_rpm() {
 
     echo -e "${BLUE}[4/4] 部署 Google Chrome 核心程序到便携目录...${NC}"
     rm -rf "$CHROME_BIN_DIR"/*
-    cp -R "$extract_dir/opt/google/chrome"/* "$CHROME_BIN_DIR/"
-    chmod +x "$CHROME_BIN_DIR/google-chrome" "$CHROME_BIN_DIR/chrome" 2>/dev/null || true
+    cp -R "$chrome_src"/* "$CHROME_BIN_DIR/"
+    chmod -R 755 "$CHROME_BIN_DIR" 2>/dev/null || true
 
     rm -rf "$temp_rpm" "$extract_dir"
     return 0
@@ -159,6 +169,8 @@ try_install_via_rpm() {
 
 install_chrome() {
     local target_bin="$CHROME_BIN_DIR/google-chrome"
+    [ -f "$target_bin" ] || target_bin="$CHROME_BIN_DIR/chrome"
+    
     if [ -f "$target_bin" ] && [ "$FORCE_REINSTALL" = false ]; then
         echo -e "${BLUE}[2/4] 检测到便携版 Google Chrome 已就绪...${NC}"
         echo -e "${GREEN}  ✓ 核心路径: $target_bin${NC}"
