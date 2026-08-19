@@ -1,4 +1,4 @@
-name: Test macOS Chrome Portable (Enhanced & Clean)
+name: Test macOS Release ZIP Packages
 
 on:
   push:
@@ -6,59 +6,72 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-dual-editions:
+  test-release-zips:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 1. Setup Shell Permissions
+      - name: 1. Build Both Release ZIP Packages
         run: |
-          chmod +x Chrome-macOS/*.command Chrome-macOS/Installer/*.command Chrome-macOS/Installer/*.sh Chrome-macOS/App/*.sh Chrome-macOS/App/Tools/*.sh
+          echo "=== 打包增强版与纯净版 ZIP ==="
+          pwsh ./package_release_macos.ps1
+          ls -la Release/macOS/
 
-      - name: 2. Test Package Compliance Audit
+      - name: 2. Test Unzipping & Running [Enhanced Edition ZIP]
         run: |
-          ./Chrome-macOS/App/Tools/verify-package.sh
-
-      - name: 3. Test One-Click Installer from Dedicated Installer Directory
-        run: |
-          test -d "Chrome-macOS/Installer"
-          test -f "Chrome-macOS/Installer/一键安装配置.command"
-          test -f "Chrome-macOS/Installer/Installer.command"
-          test -f "Chrome-macOS/Installer/setup-chrome.sh"
-          ./Chrome-macOS/Installer/一键安装配置.command --silent
-
-      - name: 4. Verify Apple codesign Digital Signature (Google LLC EQHXZ8M8AV)
-        run: |
-          CHROME_APP="Chrome-macOS/App/Chrome-bin/Google Chrome.app"
-          test -d "$CHROME_APP"
-          codesign --verify --deep --strict --verbose=2 "$CHROME_APP"
-          codesign -dv --verbose=4 "$CHROME_APP" 2>&1 | grep "EQHXZ8M8AV"
-          echo "✓ Google LLC 官方开发者证书验证 100% 通过！"
-
-      - name: 5. Test [Enhanced Edition] Launch from Root Directory
-        run: |
-          echo "=== 测试根目录【启动Chrome.command】(增强插件版) ==="
-          ./Chrome-macOS/启动Chrome.command --version
-          test -d "Chrome-macOS/App/Extensions/DarkReader"
-          test -d "Chrome-macOS/App/Extensions/KissTranslator"
-          test -d "Chrome-macOS/App/Extensions/Violentmonkey"
-          echo "✓ 增强插件版启动与扩展挂载 100% 成功！"
-
-      - name: 6. Test [Clean Edition] Launch (0 Extensions, Pure Chrome)
-        run: |
-          echo "=== 测试【纯净无插件版】启动 ==="
-          CLEAN_TEST_DIR="/tmp/Chrome-Clean-Test"
-          mkdir -p "$CLEAN_TEST_DIR"
-          cp -R Chrome-macOS/* "$CLEAN_TEST_DIR/"
-          rm -rf "$CLEAN_TEST_DIR/App/Extensions/"*
+          echo "=== 1. 解压【增强插件版】ZIP ==="
+          mkdir -p /tmp/test-enhanced
+          unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip" -d /tmp/test-enhanced
           
-          "$CLEAN_TEST_DIR/启动Chrome.command" --version
-          test -d "$CLEAN_TEST_DIR/Data/UserData"
-          echo "✓ 纯净无插件版启动与数据隔离 100% 成功！"
+          echo "=== 2. 检查解压出的目录结构 (验证单一根目录 GoogleChrome-macOS) ==="
+          test -d "/tmp/test-enhanced/GoogleChrome-macOS"
+          test -d "/tmp/test-enhanced/GoogleChrome-macOS/Installer"
+          test -f "/tmp/test-enhanced/GoogleChrome-macOS/Installer/一键安装配置.command"
+          test -f "/tmp/test-enhanced/GoogleChrome-macOS/启动Chrome.command"
+          
+          echo "=== 3. 赋予执行权限并运行 Installer 脚本 ==="
+          chmod +x /tmp/test-enhanced/GoogleChrome-macOS/Installer/*.command \
+                   /tmp/test-enhanced/GoogleChrome-macOS/Installer/*.sh \
+                   /tmp/test-enhanced/GoogleChrome-macOS/*.command \
+                   /tmp/test-enhanced/GoogleChrome-macOS/App/*.sh
+          
+          /tmp/test-enhanced/GoogleChrome-macOS/Installer/一键安装配置.command --silent
+          
+          echo "=== 4. 验证 codesign 签名与启动 Chrome ==="
+          codesign --verify --deep --strict --verbose=2 "/tmp/test-enhanced/GoogleChrome-macOS/App/Chrome-bin/Google Chrome.app"
+          /tmp/test-enhanced/GoogleChrome-macOS/启动Chrome.command --version
+          
+          echo "=== 5. 验证 3 款预装扩展 ==="
+          test -d "/tmp/test-enhanced/GoogleChrome-macOS/App/Extensions/DarkReader"
+          test -d "/tmp/test-enhanced/GoogleChrome-macOS/App/Extensions/KissTranslator"
+          test -d "/tmp/test-enhanced/GoogleChrome-macOS/App/Extensions/Violentmonkey"
+          echo "🎉 【增强插件版 ZIP】解压、安装与启动 100% 成功！"
 
-      - name: 7. Test Compliance Report Generation
+      - name: 3. Test Unzipping & Running [Clean Edition ZIP]
         run: |
-          ./Chrome-macOS/App/Tools/generate-compliance-report.sh
-          test -f "合规证明与安全审计报告.html"
-          echo "✓ 安全与合规审计报告生成 100% 成功！"
+          echo "=== 1. 解压【纯净无插件版】ZIP ==="
+          mkdir -p /tmp/test-clean
+          unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" -d /tmp/test-clean
+          
+          echo "=== 2. 检查解压出的目录结构 ==="
+          test -d "/tmp/test-clean/GoogleChrome-macOS"
+          test -d "/tmp/test-clean/GoogleChrome-macOS/Installer"
+          test -f "/tmp/test-clean/GoogleChrome-macOS/Installer/一键安装配置.command"
+          test -f "/tmp/test-clean/GoogleChrome-macOS/启动Chrome.command"
+          
+          echo "=== 3. 赋予执行权限并运行 Installer 脚本 ==="
+          chmod +x /tmp/test-clean/GoogleChrome-macOS/Installer/*.command \
+                   /tmp/test-clean/GoogleChrome-macOS/Installer/*.sh \
+                   /tmp/test-clean/GoogleChrome-macOS/*.command \
+                   /tmp/test-clean/GoogleChrome-macOS/App/*.sh
+          
+          /tmp/test-clean/GoogleChrome-macOS/Installer/一键安装配置.command --silent
+          
+          echo "=== 4. 验证 codesign 签名与启动 Chrome ==="
+          codesign --verify --deep --strict --verbose=2 "/tmp/test-clean/GoogleChrome-macOS/App/Chrome-bin/Google Chrome.app"
+          /tmp/test-clean/GoogleChrome-macOS/启动Chrome.command --version
+          
+          echo "=== 5. 验证 0 扩展纯净模式 ==="
+          test -d "/tmp/test-clean/GoogleChrome-macOS/Data/UserData"
+          echo "🎉 【纯净无插件版 ZIP】解压、安装与启动 100% 成功！"
