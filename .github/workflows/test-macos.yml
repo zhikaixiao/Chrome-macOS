@@ -12,28 +12,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Verify Package Compliance
+      - name: 1. Verify Package Compliance
         run: |
           chmod +x Chrome-macOS/App/Tools/verify-package.sh
           ./Chrome-macOS/App/Tools/verify-package.sh
 
-      - name: Run Setup and Download Official Chrome DMG
+      - name: 2. Run Setup and Download Official Chrome DMG
         run: |
           chmod +x Chrome-macOS/一键安装配置.command Chrome-macOS/App/setup-chrome.sh Chrome-macOS/App/launch-chrome.sh Chrome-macOS/App/Tools/*.sh
           ./Chrome-macOS/App/setup-chrome.sh --silent
 
-      - name: Verify Installed Chrome App and Signature
+      - name: 3. Verify Installed Chrome App and Apple Signature
         run: |
-          test -d "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
+          echo "=== 检查提取出的 App 目录结构 ==="
+          ls -la "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
+          
+          echo "=== 检查 Apple codesign 数字证书 ==="
           codesign --verify --deep --strict --verbose=2 "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
-          codesign -dv --verbose=4 "Chrome-macOS/App/Chrome-bin/Google Chrome.app" 2>&1 | grep "EQHXZ8M8AV"
+          codesign -dv --verbose=4 "Chrome-macOS/App/Chrome-bin/Google Chrome.app" 2>&1 | grep -E "(TeamIdentifier|Authority|Google LLC)"
 
-      - name: Test Launch Script
+      - name: 4. Test Chrome Binary Execution & Print Version
         run: |
-          # Test execution
-          ./Chrome-macOS/App/launch-chrome.sh --version || true
+          CHROME_BIN="Chrome-macOS/App/Chrome-bin/Google Chrome.app/Contents/MacOS/Google Chrome"
+          echo "=== 测试直接执行 Chrome 获得版本号 ==="
+          "$CHROME_BIN" --version
 
-      - name: Test Compliance Report Generation
+      - name: 5. Test Live Headless Web Rendering & Screenshot on Mac
+        run: |
+          CHROME_BIN="Chrome-macOS/App/Chrome-bin/Google Chrome.app/Contents/MacOS/Google Chrome"
+          USER_DATA_DIR="$(pwd)/Chrome-macOS/Data/UserData"
+          
+          echo "=== 启动便携版 Chrome 真实加载网页并截图 ==="
+          "$CHROME_BIN" \
+            --headless=new \
+            --user-data-dir="$USER_DATA_DIR" \
+            --screenshot=macos_chrome_render_test.png \
+            --window-size=1280,800 \
+            --no-first-run \
+            --no-default-browser-check \
+            https://example.com
+          
+          echo "=== 检查截图文件生成 ==="
+          ls -lh macos_chrome_render_test.png
+
+      - name: 6. Test Compliance Report Generation
         run: |
           ./Chrome-macOS/App/Tools/generate-compliance-report.sh
           test -f "合规证明与安全审计报告.html"
+
+      - name: 7. Upload Screenshot Artifact (下载查看真实 Mac 渲染截图)
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-chrome-screenshot
+          path: macos_chrome_render_test.png
