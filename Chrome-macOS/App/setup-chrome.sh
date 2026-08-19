@@ -50,7 +50,7 @@ done
 mkdir -p "$DATA_DIR" "$USER_DATA_DIR" "$CHROME_BIN_DIR"
 
 print_header() {
-    clear
+    clear 2>/dev/null || true
     echo -e "${CYAN}================================================================================${NC}"
     echo -e "${YELLOW}${BOLD}     Google Chrome 便携版 (macOS) - 一键安装配置与正版数字验签工具          ${NC}"
     echo -e "${CYAN}================================================================================${NC}"
@@ -61,8 +61,8 @@ print_header() {
 log_message() {
     local msg="$1"
     local timestamp
-    timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo "[$timestamp] $msg" >> "$LOG_FILE"
+    timestamp=$(date "+%Y-%m-%d %H:%M:%S" 2>/dev/null || date)
+    echo "[$timestamp] $msg" >> "$LOG_FILE" 2>/dev/null || true
 }
 
 check_dependencies() {
@@ -94,14 +94,22 @@ install_chrome() {
     echo -e "  下载地址: ${CYAN}$GOOGLE_CHROME_DMG_URL${NC}"
     
     local temp_dmg="$DATA_DIR/googlechrome.dmg"
-    local mount_point="/Volumes/GoogleChrome_Portable_Setup_$$"
-
     rm -f "$temp_dmg"
-    curl -L --progress-bar "$GOOGLE_CHROME_DMG_URL" -o "$temp_dmg"
+    curl -L --retry 3 --progress-bar "$GOOGLE_CHROME_DMG_URL" -o "$temp_dmg"
 
     echo -e "${BLUE}[3/5] 挂载 DMG 镜像并执行 Apple 官方 codesign 深度安全审计...${NC}"
-    mkdir -p "$mount_point"
-    hdiutil attach "$temp_dmg" -nobrowse -readonly -mountpoint "$mount_point" -quiet
+    
+    # 挂载 DMG 并获取实际挂载目录
+    local mount_output
+    mount_output=$(hdiutil attach "$temp_dmg" -nobrowse -readonly 2>&1)
+    local mount_point
+    mount_point=$(echo "$mount_output" | grep -o '/Volumes/.*' | tail -n 1)
+
+    if [ -z "$mount_point" ] || [ ! -d "$mount_point" ]; then
+        echo -e "${RED}❌ DMG 挂载失败: $mount_output${NC}"
+        rm -f "$temp_dmg"
+        exit 1
+    fi
 
     local source_app="$mount_point/Google Chrome.app"
     if [ ! -d "$source_app" ]; then
@@ -177,7 +185,7 @@ check_dependencies
 install_chrome
 verify_extensions
 print_summary
-log_message "Installation and configuration completed successfully on macOS ($(uname -m))"
+log_message "Installation and configuration completed successfully on macOS ($(uname -m 2>/dev/null || echo 'unknown'))"
 
 if [ "$AUTO_LAUNCH" = true ]; then
     echo -e "${CYAN}正在为您自动启动 Google Chrome...${NC}"
