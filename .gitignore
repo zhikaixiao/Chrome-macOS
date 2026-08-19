@@ -1,11 +1,14 @@
 # Chrome binaries (downloaded at setup time)
 App/Chrome-bin/
 Chrome-macOS/App/Chrome-bin/
+Chrome-Linux/App/Chrome-bin/
 Chrome-Enhanced/App/Chrome-bin/
 Chrome-UltraLite/App/Chrome-bin/
 Data/googlechrome.dmg
+Data/google-chrome-stable*
 Data/UserData/
 Chrome-macOS/Data/UserData/
+Chrome-Linux/Data/UserData/
 
 # Root large archives
 *.7z
@@ -16,6 +19,7 @@ GoogleChrome-Portable.zip.sha256
 # Release archives
 Release/*
 !Release/macOS/
+!Release/Linux/
 
 # Temporary test / sandbox
 SandboxTest/

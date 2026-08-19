@@ -1,0 +1,119 @@
+name: Test Cross-Platform Release Packages (macOS & Linux)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-macos-packages:
+    name: Test macOS Portable Release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 1. Verify Committed macOS Packages Exist
+        run: |
+          ls -la Release/macOS/
+          test -f "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip"
+          test -f "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip"
+
+      - name: 2. Test Extracting & Running [macOS Enhanced Edition ZIP]
+        run: |
+          echo "=== 1. 解压【macOS 增强插件版 ZIP】==="
+          mkdir -p /tmp/test-mac-enhanced
+          ditto -xk "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip" /tmp/test-mac-enhanced
+          
+          test -d "/tmp/test-mac-enhanced/GoogleChrome-macOS"
+          test -d "/tmp/test-mac-enhanced/GoogleChrome-macOS/Installer"
+          test -f "/tmp/test-mac-enhanced/GoogleChrome-macOS/Installer/一键安装配置.command"
+          test -f "/tmp/test-mac-enhanced/GoogleChrome-macOS/启动Chrome.command"
+          
+          chmod +x /tmp/test-mac-enhanced/GoogleChrome-macOS/Installer/*.command \
+                   /tmp/test-mac-enhanced/GoogleChrome-macOS/Installer/*.sh \
+                   /tmp/test-mac-enhanced/GoogleChrome-macOS/*.command \
+                   /tmp/test-mac-enhanced/GoogleChrome-macOS/App/*.sh
+          
+          /tmp/test-mac-enhanced/GoogleChrome-macOS/Installer/一键安装配置.command --silent
+          codesign --verify --deep --strict "/tmp/test-mac-enhanced/GoogleChrome-macOS/App/Chrome-bin/Google Chrome.app"
+          codesign -dv --verbose=4 "/tmp/test-mac-enhanced/GoogleChrome-macOS/App/Chrome-bin/Google Chrome.app" 2>&1 | grep "EQHXZ8M8AV"
+          /tmp/test-mac-enhanced/GoogleChrome-macOS/启动Chrome.command --version
+          
+          test -d "/tmp/test-mac-enhanced/GoogleChrome-macOS/App/Extensions/DarkReader"
+          test -d "/tmp/test-mac-enhanced/GoogleChrome-macOS/App/Extensions/KissTranslator"
+          test -d "/tmp/test-mac-enhanced/GoogleChrome-macOS/App/Extensions/Violentmonkey"
+          echo "🎉 【macOS 增强插件版】100% 成功！"
+
+      - name: 3. Test Extracting & Running [macOS Clean Edition ZIP]
+        run: |
+          echo "=== 1. 解压【macOS 纯净无插件版 ZIP】==="
+          mkdir -p /tmp/test-mac-clean
+          ditto -xk "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" /tmp/test-mac-clean
+          
+          test -d "/tmp/test-mac-clean/GoogleChrome-macOS"
+          chmod +x /tmp/test-mac-clean/GoogleChrome-macOS/Installer/*.command \
+                   /tmp/test-mac-clean/GoogleChrome-macOS/Installer/*.sh \
+                   /tmp/test-mac-clean/GoogleChrome-macOS/*.command \
+                   /tmp/test-mac-clean/GoogleChrome-macOS/App/*.sh
+          
+          /tmp/test-mac-clean/GoogleChrome-macOS/Installer/一键安装配置.command --silent
+          /tmp/test-mac-clean/GoogleChrome-macOS/启动Chrome.command --version
+          test -d "/tmp/test-mac-clean/GoogleChrome-macOS/Data/UserData"
+          echo "🎉 【macOS 纯净无插件版】100% 成功！"
+
+  test-linux-packages:
+    name: Test Linux Portable Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 1. Verify Committed Linux Packages Exist
+        run: |
+          ls -la Release/Linux/
+          test -f "Release/Linux/GoogleChrome-Portable-Linux-Enhanced.zip"
+          test -f "Release/Linux/GoogleChrome-Portable-Linux-Clean.zip"
+
+      - name: 2. Test Extracting & Running [Linux Enhanced Edition ZIP]
+        run: |
+          echo "=== 1. 解压【Linux 增强插件版 ZIP】==="
+          mkdir -p /tmp/test-linux-enhanced
+          unzip -q "Release/Linux/GoogleChrome-Portable-Linux-Enhanced.zip" -d /tmp/test-linux-enhanced
+          
+          test -d "/tmp/test-linux-enhanced/GoogleChrome-Linux"
+          test -d "/tmp/test-linux-enhanced/GoogleChrome-Linux/Installer"
+          test -f "/tmp/test-linux-enhanced/GoogleChrome-Linux/Installer/一键安装配置.sh"
+          test -f "/tmp/test-linux-enhanced/GoogleChrome-Linux/启动Chrome.sh"
+          
+          chmod +x /tmp/test-linux-enhanced/GoogleChrome-Linux/Installer/*.sh \
+                   /tmp/test-linux-enhanced/GoogleChrome-Linux/*.sh \
+                   /tmp/test-linux-enhanced/GoogleChrome-Linux/App/*.sh
+          
+          echo "=== 2. 执行 Linux 一键安装配置 (DEB 官方直连免 Root 提取) ==="
+          /tmp/test-linux-enhanced/GoogleChrome-Linux/Installer/一键安装配置.sh --silent
+          
+          echo "=== 3. 执行启动并探测 Chrome 版本 ==="
+          /tmp/test-linux-enhanced/GoogleChrome-Linux/启动Chrome.sh --version
+          
+          echo "=== 4. 校验 3 款预装扩展 ==="
+          test -d "/tmp/test-linux-enhanced/GoogleChrome-Linux/App/Extensions/DarkReader"
+          test -d "/tmp/test-linux-enhanced/GoogleChrome-Linux/App/Extensions/KissTranslator"
+          test -d "/tmp/test-linux-enhanced/GoogleChrome-Linux/App/Extensions/Violentmonkey"
+          echo "🎉 【Linux 增强插件版】解压、安装与启动 100% 成功！"
+
+      - name: 3. Test Extracting & Running [Linux Clean Edition ZIP]
+        run: |
+          echo "=== 1. 解压【Linux 纯净无插件版 ZIP】==="
+          mkdir -p /tmp/test-linux-clean
+          unzip -q "Release/Linux/GoogleChrome-Portable-Linux-Clean.zip" -d /tmp/test-linux-clean
+          
+          test -d "/tmp/test-linux-clean/GoogleChrome-Linux"
+          chmod +x /tmp/test-linux-clean/GoogleChrome-Linux/Installer/*.sh \
+                   /tmp/test-linux-clean/GoogleChrome-Linux/*.sh \
+                   /tmp/test-linux-clean/GoogleChrome-Linux/App/*.sh
+          
+          /tmp/test-linux-clean/GoogleChrome-Linux/Installer/一键安装配置.sh --silent
+          /tmp/test-linux-clean/GoogleChrome-Linux/启动Chrome.sh --version
+          test -d "/tmp/test-linux-clean/GoogleChrome-Linux/Data/UserData"
+          echo "🎉 【Linux 纯净无插件版】解压、安装与启动 100% 成功！"
