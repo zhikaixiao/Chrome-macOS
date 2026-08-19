@@ -11,7 +11,7 @@ if (-not $OutputDir) {
 $SourceDir = Join-Path $ScriptDir "Chrome-macOS"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "     Building macOS Release Package: GoogleChrome-Portable-macOS.zip             " -ForegroundColor Yellow
+Write-Host "     Building macOS Release Packages: Enhanced & Clean Editions                 " -ForegroundColor Yellow
 Write-Host "================================================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path $SourceDir)) {
@@ -22,13 +22,7 @@ if (-not (Test-Path $OutputDir)) {
     New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
 }
 
-$ZipPath = Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip"
-$ShaPath = Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip.sha256"
-
-if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-if (Test-Path $ShaPath) { Remove-Item $ShaPath -Force }
-
-# 确保清理临时文件
+# Clean temporary files
 $CleanPaths = @(
     (Join-Path $SourceDir "App\Chrome-bin"),
     (Join-Path $SourceDir "Data\googlechrome.dmg"),
@@ -42,16 +36,55 @@ foreach ($p in $CleanPaths) {
 }
 New-Item -Path (Join-Path $SourceDir "Data\UserData") -ItemType Directory -Force | Out-Null
 
-Write-Host "[1/3] Packing release ZIP archive..." -ForegroundColor Blue
-Compress-Archive -Path "$SourceDir\*" -DestinationPath $ZipPath -CompressionLevel Optimal
+# 1. Build Enhanced Edition (with 3 extensions)
+Write-Host "[1/2] Packaging Enhanced Edition (with 3 extensions)..." -ForegroundColor Blue
+$EnhancedZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS-Enhanced.zip"
+$DefaultZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip"
 
-Write-Host "[2/3] Calculating SHA-256 integrity hash..." -ForegroundColor Blue
-$Hash = (Get-FileHash -Path $ZipPath -Algorithm SHA256).Hash
-$HashContent = "$Hash  GoogleChrome-Portable-macOS.zip"
-Set-Content -Path $ShaPath -Value $HashContent -Encoding UTF8
+if (Test-Path $EnhancedZip) { Remove-Item $EnhancedZip -Force }
+if (Test-Path $DefaultZip) { Remove-Item $DefaultZip -Force }
 
-$ZipSize = (Get-Item $ZipPath).Length / 1MB
-Write-Host "[3/3] Build finished successfully!" -ForegroundColor Green
-Write-Host "  * Release ZIP: $ZipPath ($([math]::Round($ZipSize, 2)) MB)" -ForegroundColor Cyan
-Write-Host "  * SHA-256:     $Hash" -ForegroundColor DarkGray
+Compress-Archive -Path "$SourceDir\*" -DestinationPath $EnhancedZip -CompressionLevel Optimal
+Copy-Item $EnhancedZip $DefaultZip -Force
+
+$EnhancedHash = (Get-FileHash -Path $EnhancedZip -Algorithm SHA256).Hash
+Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-macOS-Enhanced.zip.sha256") -Value "$EnhancedHash  GoogleChrome-Portable-macOS-Enhanced.zip" -Encoding UTF8
+Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip.sha256") -Value "$EnhancedHash  GoogleChrome-Portable-macOS.zip" -Encoding UTF8
+
+$EnhancedSize = [math]::Round(((Get-Item $EnhancedZip).Length / 1MB), 2)
+Write-Host "  * Enhanced Edition: $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Green
+
+# 2. Build Clean Edition (0 extensions, pure Chrome)
+Write-Host "[2/2] Packaging Clean Edition (0 extensions, pure Chrome)..." -ForegroundColor Blue
+$CleanZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS-Clean.zip"
+if (Test-Path $CleanZip) { Remove-Item $CleanZip -Force }
+
+$TempCleanDir = Join-Path $env:TEMP ("GoogleChrome-macOS-Clean-" + [guid]::NewGuid().ToString())
+try {
+    Copy-Item -Path $SourceDir -Destination $TempCleanDir -Recurse -Force
+    $TempExtDir = Join-Path $TempCleanDir "App\Extensions"
+    if (Test-Path $TempExtDir) {
+        Remove-Item "$TempExtDir\*" -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    
+    Compress-Archive -Path "$TempCleanDir\*" -DestinationPath $CleanZip -CompressionLevel Optimal
+    
+    $CleanHash = (Get-FileHash -Path $CleanZip -Algorithm SHA256).Hash
+    Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-macOS-Clean.zip.sha256") -Value "$CleanHash  GoogleChrome-Portable-macOS-Clean.zip" -Encoding UTF8
+    
+    $CleanSize = [math]::Round(((Get-Item $CleanZip).Length / 1KB), 2)
+    Write-Host "  * Clean Edition:    $CleanZip ($CleanSize KB)" -ForegroundColor Green
+}
+finally {
+    if (Test-Path $TempCleanDir) {
+        Remove-Item $TempCleanDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 Write-Host ""
+Write-Host "================================================================================" -ForegroundColor Cyan
+Write-Host "                       Build Completed Successfully!                            " -ForegroundColor Green
+Write-Host "================================================================================" -ForegroundColor Cyan
+Write-Host "1. Enhanced Edition (With Plugins) : $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Yellow
+Write-Host "2. Clean Edition (No Plugins)      : $CleanZip ($CleanSize KB)" -ForegroundColor Yellow
+Write-Host "================================================================================" -ForegroundColor Cyan
