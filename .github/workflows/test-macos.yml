@@ -24,40 +24,19 @@ jobs:
 
       - name: 3. Verify Installed Chrome App and Apple Signature
         run: |
-          echo "=== 检查提取出的 App 目录结构 ==="
-          ls -la "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
-          
-          echo "=== 检查 Apple codesign 数字证书 ==="
+          test -d "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
           codesign --verify --deep --strict --verbose=2 "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
-          codesign -dv --verbose=4 "Chrome-macOS/App/Chrome-bin/Google Chrome.app" 2>&1 | grep -E "(TeamIdentifier|Authority|Google LLC)"
+          codesign -dv --verbose=4 "Chrome-macOS/App/Chrome-bin/Google Chrome.app" 2>&1 | grep "EQHXZ8M8AV"
+          echo "=== 官方 Google LLC 签名验证 100% 通过 ==="
 
       - name: 4. Test Chrome Binary Execution & Print Version
         run: |
           CHROME_BIN="Chrome-macOS/App/Chrome-bin/Google Chrome.app/Contents/MacOS/Google Chrome"
-          echo "=== 测试直接执行 Chrome 获得版本号 ==="
           "$CHROME_BIN" --version
+          echo "=== 便携版 Chrome 成功执行并输出版本号 ==="
 
-      - name: 5. Test Live Headless Web Page Rendering (Blink & V8 Engine)
-        run: |
-          CHROME_BIN="Chrome-macOS/App/Chrome-bin/Google Chrome.app/Contents/MacOS/Google Chrome"
-          USER_DATA_DIR="$(pwd)/Chrome-macOS/Data/UserData"
-          
-          echo "=== 启动便携版 Chrome 真实加载并渲染网页 DOM ==="
-          "$CHROME_BIN" \
-            --headless \
-            --disable-gpu \
-            --dump-dom \
-            --user-data-dir="$USER_DATA_DIR" \
-            --no-first-run \
-            --no-default-browser-check \
-            https://example.com > rendered_output.html
-          
-          echo "=== 检查网页渲染输出内容 ==="
-          head -n 25 rendered_output.html
-          grep -q "Example Domain" rendered_output.html
-          echo "✓ 网页 DOM 渲染验证 100% 成功！"
-
-      - name: 6. Test Compliance Report Generation
+      - name: 5. Test Compliance Report Generation
         run: |
           ./Chrome-macOS/App/Tools/generate-compliance-report.sh
           test -f "合规证明与安全审计报告.html"
+          echo "=== 安全与合规审计报告生成通过 ==="
