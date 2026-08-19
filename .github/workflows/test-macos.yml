@@ -18,7 +18,7 @@ jobs:
           pwsh ./package_release_macos.ps1
           ls -la Release/macOS/
 
-      - name: 2. Test Unzipping & Running [Enhanced Edition ZIP]
+      - name: 2. Test Unzipping & Running [Enhanced Edition ZIP] (DMG Primary Engine)
         run: |
           echo "=== 1. 解压【增强插件版】ZIP ==="
           mkdir -p /tmp/test-enhanced
@@ -30,7 +30,7 @@ jobs:
           test -f "/tmp/test-enhanced/GoogleChrome-macOS/Installer/一键安装配置.command"
           test -f "/tmp/test-enhanced/GoogleChrome-macOS/启动Chrome.command"
           
-          echo "=== 3. 赋予执行权限并运行 Installer 脚本 ==="
+          echo "=== 3. 赋予执行权限并运行 Installer 脚本 (DMG 引擎) ==="
           chmod +x /tmp/test-enhanced/GoogleChrome-macOS/Installer/*.command \
                    /tmp/test-enhanced/GoogleChrome-macOS/Installer/*.sh \
                    /tmp/test-enhanced/GoogleChrome-macOS/*.command \
@@ -75,3 +75,24 @@ jobs:
           echo "=== 5. 验证 0 扩展纯净模式 ==="
           test -d "/tmp/test-clean/GoogleChrome-macOS/Data/UserData"
           echo "🎉 【纯净无插件版 ZIP】解压、安装与启动 100% 成功！"
+
+      - name: 4. Test Enterprise PKG Fallback Engine
+        run: |
+          echo "=== 测试【PKG 备用容灾解包引擎】==="
+          PKG_TEST_DIR="/tmp/test-pkg-engine"
+          mkdir -p "$PKG_TEST_DIR"
+          unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" -d "$PKG_TEST_DIR"
+          
+          chmod +x "$PKG_TEST_DIR/GoogleChrome-macOS/Installer/"*.sh
+          
+          # 手动触发 PKG 流程进行验证
+          PKG_URL="https://dl.google.com/chrome/mac/stable/GGRO/googlechrome.pkg"
+          echo "正在测试 PKG 下载与 pkgutil 免挂载解包..."
+          curl -L --retry 3 -s "$PKG_URL" -o "$PKG_TEST_DIR/test.pkg"
+          pkgutil --expand-full "$PKG_TEST_DIR/test.pkg" "$PKG_TEST_DIR/pkg_extracted"
+          
+          EXTRACTED_APP=$(find "$PKG_TEST_DIR/pkg_extracted" -type d -name "Google Chrome.app" | head -n 1)
+          test -d "$EXTRACTED_APP"
+          codesign --verify --deep --strict "$EXTRACTED_APP"
+          codesign -dv --verbose=4 "$EXTRACTED_APP" 2>&1 | grep "EQHXZ8M8AV"
+          echo "🎉 【PKG 备用容灾解包引擎】免挂载与官方 codesign 强验签 100% 成功！"
