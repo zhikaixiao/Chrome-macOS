@@ -6,9 +6,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 if (-not $OutputDir) {
-    $OutputDir = Join-Path $ScriptDir "Release\macOS"
+    $OutputDir = Join-Path $ScriptDir (Join-Path "Release" "macOS")
 }
 $SourceDir = Join-Path $ScriptDir "Chrome-macOS"
 
@@ -26,19 +26,19 @@ if (-not (Test-Path $OutputDir)) {
 
 # Clean temporary files in source directory
 $CleanPaths = @(
-    (Join-Path $SourceDir "App\Chrome-bin"),
-    (Join-Path $SourceDir "Data\googlechrome.dmg"),
-    (Join-Path $SourceDir "Data\UserData\*"),
-    (Join-Path $SourceDir "Data\Compliance_Audit_Log.txt")
+    (Join-Path $SourceDir "App/Chrome-bin"),
+    (Join-Path $SourceDir "Data/googlechrome.dmg"),
+    (Join-Path $SourceDir "Data/UserData/*"),
+    (Join-Path $SourceDir "Data/Compliance_Audit_Log.txt")
 )
 foreach ($p in $CleanPaths) {
     if (Test-Path $p) {
         Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
-New-Item -Path (Join-Path $SourceDir "Data\UserData") -ItemType Directory -Force | Out-Null
+New-Item -Path (Join-Path $SourceDir "Data/UserData") -ItemType Directory -Force | Out-Null
 
-$StagingParent = Join-Path $env:TEMP ("MacStaging-" + [guid]::NewGuid().ToString())
+$StagingParent = Join-Path ([System.IO.Path]::GetTempPath()) ("MacStaging-" + [guid]::NewGuid().ToString())
 $EnclosingDirName = "GoogleChrome-macOS"
 
 try {
@@ -46,9 +46,9 @@ try {
     # 1. 构建【增强插件版】(带外层 GoogleChrome-macOS 文件夹)
     # -------------------------------------------------------------------------
     Write-Host "[1/2] Packaging Enhanced Edition (Enclosed in 'GoogleChrome-macOS' folder)..." -ForegroundColor Blue
-    $EnhancedStaging = Join-Path $StagingParent "Enhanced\$EnclosingDirName"
+    $EnhancedStaging = Join-Path $StagingParent (Join-Path "Enhanced" $EnclosingDirName)
     New-Item -Path $EnhancedStaging -ItemType Directory -Force | Out-Null
-    Copy-Item -Path "$SourceDir\*" -Destination $EnhancedStaging -Recurse -Force
+    Copy-Item -Path "$SourceDir/*" -Destination $EnhancedStaging -Recurse -Force
 
     $EnhancedZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS-Enhanced.zip"
     if (Test-Path $EnhancedZip) { Remove-Item $EnhancedZip -Force }
@@ -69,14 +69,14 @@ try {
     # 2. 构建【纯净无插件版】(带外层 GoogleChrome-macOS 文件夹)
     # -------------------------------------------------------------------------
     Write-Host "[2/2] Packaging Clean Edition (Enclosed in 'GoogleChrome-macOS' folder)..." -ForegroundColor Blue
-    $CleanStaging = Join-Path $StagingParent "Clean\$EnclosingDirName"
+    $CleanStaging = Join-Path $StagingParent (Join-Path "Clean" $EnclosingDirName)
     New-Item -Path $CleanStaging -ItemType Directory -Force | Out-Null
-    Copy-Item -Path "$SourceDir\*" -Destination $CleanStaging -Recurse -Force
+    Copy-Item -Path "$SourceDir/*" -Destination $CleanStaging -Recurse -Force
 
     # 清空 Clean 版的扩展
-    $CleanExtDir = Join-Path $CleanStaging "App\Extensions"
+    $CleanExtDir = Join-Path $CleanStaging "App/Extensions"
     if (Test-Path $CleanExtDir) {
-        Remove-Item "$CleanExtDir\*" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item "$CleanExtDir/*" -Recurse -Force -ErrorAction SilentlyContinue
     }
 
     $CleanZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS-Clean.zip"
