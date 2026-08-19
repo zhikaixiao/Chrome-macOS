@@ -46,8 +46,14 @@ if [ ${#EXT_LIST[@]} -gt 0 ]; then
     LOAD_EXT_ARG="--load-extension=$EXT_PATHS"
 fi
 
-# 启动便携版 Google Chrome
-exec "$CHROME_BIN" \
+# 若为版本探测模式，直接输出版本
+if [[ "$*" == *"--version"* ]]; then
+    "$CHROME_BIN" --version
+    exit 0
+fi
+
+# 后台启动便携版 Google Chrome
+nohup "$CHROME_BIN" \
     --user-data-dir="$USER_DATA_DIR" \
     $LOAD_EXT_ARG \
     --no-first-run \

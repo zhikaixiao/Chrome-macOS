@@ -19,11 +19,11 @@ jobs:
           test -f "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip"
           test -f "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip"
 
-      - name: 2. Test Unzipping & Running [Enhanced Edition ZIP] (DMG Primary Engine)
+      - name: 2. Test Extracting & Running [Enhanced Edition ZIP] (DMG Primary Engine)
         run: |
-          echo "=== 1. 直接解压仓库中的【增强插件版 ZIP】==="
+          echo "=== 1. 使用 macOS 原生 ditto 解压【增强插件版 ZIP】==="
           mkdir -p /tmp/test-enhanced
-          unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip" -d /tmp/test-enhanced
+          ditto -xk "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip" /tmp/test-enhanced
           
           echo "=== 2. 检查解压出的目录结构 (验证单一根目录 GoogleChrome-macOS) ==="
           test -d "/tmp/test-enhanced/GoogleChrome-macOS"
@@ -49,11 +49,11 @@ jobs:
           test -d "/tmp/test-enhanced/GoogleChrome-macOS/App/Extensions/Violentmonkey"
           echo "🎉 【增强插件版 ZIP】解压、安装与启动 100% 成功！"
 
-      - name: 3. Test Unzipping & Running [Clean Edition ZIP]
+      - name: 3. Test Extracting & Running [Clean Edition ZIP]
         run: |
-          echo "=== 1. 直接解压仓库中的【纯净无插件版 ZIP】==="
+          echo "=== 1. 使用 macOS 原生 ditto 解压【纯净无插件版 ZIP】==="
           mkdir -p /tmp/test-clean
-          unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" -d /tmp/test-clean
+          ditto -xk "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" /tmp/test-clean
           
           echo "=== 2. 检查解压出的目录结构 ==="
           test -d "/tmp/test-clean/GoogleChrome-macOS"
@@ -82,7 +82,7 @@ jobs:
           echo "=== 测试【PKG 备用容灾解包引擎】==="
           PKG_TEST_DIR="/tmp/test-pkg-engine"
           mkdir -p "$PKG_TEST_DIR"
-          unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" -d "$PKG_TEST_DIR"
+          ditto -xk "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" "$PKG_TEST_DIR"
           
           chmod +x "$PKG_TEST_DIR/GoogleChrome-macOS/Installer/"*.sh
           
