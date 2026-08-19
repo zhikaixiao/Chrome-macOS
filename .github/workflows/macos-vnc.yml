@@ -25,18 +25,14 @@ jobs:
 
       - name: 2. Setup Web-based noVNC & Cloudflare Tunnel
         run: |
-          echo "=== 安装 websockify, noVNC 与 Cloudflare Tunnel ==="
-          # 使用 homebrew 安装 websockify (macOS Apple Silicon 原生支持)
-          brew install websockify
-          
-          # 克隆 noVNC 网页客户端
+          echo "=== 配置 noVNC 网页客户端 ==="
           git clone --depth 1 https://github.com/novnc/noVNC.git /tmp/novnc
           
-          # 启动 websockify 桥接 6080 端口到 macOS VNC 5900
-          websockify --web /tmp/novnc 6080 localhost:5900 &
-          sleep 2
+          # 启动 noVNC 代理 (自带内置 websockify，开箱即用)
+          /tmp/novnc/utils/novnc_proxy --vnc localhost:5900 --listen 6080 &
+          sleep 3
           
-          # 下载 Cloudflare Tunnel (ARM64 / Apple Silicon)
+          echo "=== 下载并启动 Cloudflare Tunnel ==="
           ARCH=$(uname -m)
           if [ "$ARCH" = "arm64" ]; then
             CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-arm64.tgz"
@@ -48,13 +44,11 @@ jobs:
           tar -xzf /tmp/cloudflared.tgz -C /tmp/
           chmod +x /tmp/cloudflared
           
-          echo "=== 启动公网安全隧道 ==="
           /tmp/cloudflared tunnel --url http://localhost:6080 > /tmp/tunnel.log 2>&1 &
           
-          # 等待并提取生成的公网 HTTPS 访问链接
           echo "正在生成公网安全访问链接..."
           TUNNEL_URL=""
-          for i in {1..30}; do
+          for i in {1..40}; do
             TUNNEL_URL=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' /tmp/tunnel.log | head -n 1 || true)
             if [ -n "$TUNNEL_URL" ]; then
               break
@@ -62,6 +56,12 @@ jobs:
             sleep 2
           done
           
+          if [ -z "$TUNNEL_URL" ]; then
+            echo "❌ Cloudflare 日志内容如下:"
+            cat /tmp/tunnel.log
+            exit 1
+          fi
+
           echo ""
           echo "================================================================================"
           echo "🎉 您的 macOS 云端真机远程桌面已成功创建！"
@@ -71,7 +71,7 @@ jobs:
           echo "================================================================================"
           echo "💡 使用指南:"
           echo "  1. 复制上面的链接直接在浏览器打开，输入密码 123456，即可看到真实的 macOS 桌面。"
-          echo "  2. 桌面打开终端，进入当前工程目录: cd $GITHUB_WORKSPACE/Chrome-macOS"
+          echo "  2. 桌面打开终端，进入当前工程目录: cd \$GITHUB_WORKSPACE/Chrome-macOS"
           echo "  3. 运行 ./一键安装配置.command 和 ./启动Chrome.command 亲自体验！"
           echo "================================================================================"
           echo ""
