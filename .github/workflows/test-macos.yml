@@ -14,15 +14,19 @@ jobs:
 
       - name: 1. Setup Shell Permissions
         run: |
-          chmod +x Chrome-macOS/*.command Chrome-macOS/App/*.sh Chrome-macOS/App/Tools/*.sh
+          chmod +x Chrome-macOS/*.command Chrome-macOS/Installer/*.command Chrome-macOS/Installer/*.sh Chrome-macOS/App/*.sh Chrome-macOS/App/Tools/*.sh
 
       - name: 2. Test Package Compliance Audit
         run: |
           ./Chrome-macOS/App/Tools/verify-package.sh
 
-      - name: 3. Test Setup & Official Google Chrome Universal DMG
+      - name: 3. Test Installer Directory & Download Official Chrome DMG
         run: |
-          ./Chrome-macOS/App/setup-chrome.sh --silent
+          test -d "Chrome-macOS/Installer"
+          test -f "Chrome-macOS/Installer/一键安装配置.command"
+          test -f "Chrome-macOS/Installer/Installer.command"
+          test -f "Chrome-macOS/Installer/setup-chrome.sh"
+          ./Chrome-macOS/Installer/setup-chrome.sh --silent
 
       - name: 4. Verify Apple codesign Digital Signature (Google LLC EQHXZ8M8AV)
         run: |
@@ -44,13 +48,11 @@ jobs:
       - name: 6. Test [Clean Edition] Launch (0 Extensions, Pure Chrome)
         run: |
           echo "=== 测试【纯净无插件版】启动 ==="
-          # 创建纯净测试环境（移除 Extensions 文件夹内扩展）
           CLEAN_TEST_DIR="/tmp/Chrome-Clean-Test"
           mkdir -p "$CLEAN_TEST_DIR"
           cp -R Chrome-macOS/* "$CLEAN_TEST_DIR/"
           rm -rf "$CLEAN_TEST_DIR/App/Extensions/"*
           
-          # 在纯净环境下执行便携启动
           "$CLEAN_TEST_DIR/App/launch-chrome.sh" --version
           test -d "$CLEAN_TEST_DIR/Data/UserData"
           echo "✓ 纯净无插件版启动与数据隔离 100% 成功！"

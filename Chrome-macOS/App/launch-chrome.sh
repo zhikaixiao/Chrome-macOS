@@ -16,7 +16,11 @@ CHROME_BIN="$APP_DIR/Chrome-bin/Google Chrome.app/Contents/MacOS/Google Chrome"
 # 若尚未安装，自动引导执行一键安装配置
 if [ ! -f "$CHROME_BIN" ]; then
     echo "未检测到便携版 Google Chrome，正在为您自动拉取官方正版并完成配置..."
-    "$APP_DIR/setup-chrome.sh"
+    if [ -f "$ROOT_DIR/Installer/setup-chrome.sh" ]; then
+        "$ROOT_DIR/Installer/setup-chrome.sh"
+    elif [ -f "$APP_DIR/setup-chrome.sh" ]; then
+        "$APP_DIR/setup-chrome.sh"
+    fi
 fi
 
 mkdir -p "$USER_DATA_DIR"

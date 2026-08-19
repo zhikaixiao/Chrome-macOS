@@ -15,7 +15,7 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-# 目录解析
+# 目录解析 (从 Installer/ 解析到根目录)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_DIR="$ROOT_DIR/App"
@@ -154,17 +154,21 @@ install_chrome() {
 }
 
 verify_extensions() {
-    echo -e "${BLUE}[5/5] 校验合规内置扩展与便携用户数据目录...${NC}"
+    echo -e "${BLUE}[5/5] 校验便携扩展与用户数据目录...${NC}"
     local ext_dir="$APP_DIR/Extensions"
     local extensions=("DarkReader" "KissTranslator" "Violentmonkey")
+    local found_count=0
     
     for ext in "${extensions[@]}"; do
         if [ -d "$ext_dir/$ext" ]; then
             echo -e "${GREEN}  ✓ 已加载合规开源扩展: $ext${NC}"
-        else
-            echo -e "${YELLOW}  ! 提示: 未找到扩展 $ext (可稍后手动添加)${NC}"
+            found_count=$((found_count + 1))
         fi
     done
+
+    if [ "$found_count" -eq 0 ]; then
+        echo -e "${GREEN}  ✓ 纯净无扩展模式就绪 (原生 Chrome 环境)${NC}"
+    fi
 }
 
 print_summary() {
