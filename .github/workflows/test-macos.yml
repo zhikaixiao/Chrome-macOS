@@ -12,15 +12,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 1. Build Both Release ZIP Packages
+      - name: 1. Verify Committed Release ZIP Packages Exist
         run: |
-          echo "=== 打包增强版与纯净版 ZIP ==="
-          pwsh ./package_release_macos.ps1
+          echo "=== 检查提交到仓库的两个 macOS 交付包 ==="
           ls -la Release/macOS/
+          test -f "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip"
+          test -f "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip"
 
       - name: 2. Test Unzipping & Running [Enhanced Edition ZIP] (DMG Primary Engine)
         run: |
-          echo "=== 1. 解压【增强插件版】ZIP ==="
+          echo "=== 1. 直接解压仓库中的【增强插件版 ZIP】==="
           mkdir -p /tmp/test-enhanced
           unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Enhanced.zip" -d /tmp/test-enhanced
           
@@ -50,7 +51,7 @@ jobs:
 
       - name: 3. Test Unzipping & Running [Clean Edition ZIP]
         run: |
-          echo "=== 1. 解压【纯净无插件版】ZIP ==="
+          echo "=== 1. 直接解压仓库中的【纯净无插件版 ZIP】==="
           mkdir -p /tmp/test-clean
           unzip -q "Release/macOS/GoogleChrome-Portable-macOS-Clean.zip" -d /tmp/test-clean
           
@@ -85,7 +86,6 @@ jobs:
           
           chmod +x "$PKG_TEST_DIR/GoogleChrome-macOS/Installer/"*.sh
           
-          # 手动触发 PKG 流程进行验证
           PKG_URL="https://dl.google.com/chrome/mac/stable/GGRO/googlechrome.pkg"
           echo "正在测试 PKG 下载与 pkgutil 免挂载解包..."
           curl -L --retry 3 -s "$PKG_URL" -o "$PKG_TEST_DIR/test.pkg"

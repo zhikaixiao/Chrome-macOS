@@ -7,11 +7,15 @@ Data/googlechrome.dmg
 Data/UserData/
 Chrome-macOS/Data/UserData/
 
-# Release archives
-*.zip
+# Root large archives
 *.7z
-*.sha256
-Release/
+*.7z.sha256
+GoogleChrome-Portable.zip
+GoogleChrome-Portable.zip.sha256
+
+# Release archives
+Release/*
+!Release/macOS/
 
 # Temporary test / sandbox
 SandboxTest/
