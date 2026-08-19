@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Dark Reader (深色护眼)",
+  "version": "4.9.128",
+  "description": "基于开源 DarkReader 引擎的高性能网页深色护眼模式，保护视力。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Dark Reader 深色护眼",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "darkreader.js",
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4d28ad+SEX71CviNG7nXMVTzdukPRq4Fdc2SHs4a/aRboF4WadrszTfhjX8VvEDkGIl8F8lpk5//C6UFhtDGMLRVzLSXqGqn2kKx7AON/aH4Bg9q9w1qDGatVnf0D6TEL3dmZYQIt492VhI3V6LIhtUPcoMi54pz1727zCtyngnh3wRYQjXD1dLcf8OwwYqKDnbPSbjOShatYu/WYqYA1MOIpzdZbDgggKoJxJ5oRJXZgGoW1fK2J/0bieOSoNWg3zHKHqiQV7GErU2xbJY7iJgIG/iUi7y0sDU7TI8gf06pyECTd+k/7JtRbnxcmy4tTKk8l0ho7zukz3NL2KkFswIDAQAB"
+}

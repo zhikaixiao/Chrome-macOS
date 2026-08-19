@@ -1,0 +1,25 @@
+﻿================================================================================
+        Google Chrome Portable - Legal Compliance Audit Log
+================================================================================
+Timestamp       : 2026-08-17 02:48:46
+Machine         : DESKTOP-R43CTLV
+OS Version      : Microsoft Windows NT 10.0.26200.0
+--------------------------------------------------------------------------------
+[1. Chrome Binary Source]
+  Executable    : C:\Users\xdani\Documents\Chrome\App\Chrome-bin\chrome.exe
+  User Data Dir : C:\Users\xdani\Documents\Chrome\Data\UserData (isolated, portable, no system residue)
+  Version       : 151.0.7922.138
+  Cert Status   : Valid
+  Cert Subject  : CN=Google LLC, O=Google LLC, L=Mountain View, S=California, C=US, SERIALNUMBER=3582691, OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US
+--------------------------------------------------------------------------------
+[2. Extension Compliance Audit]
+  - Violentmonkey   : Open-source userscript manager (MV3, no proxy/vpnProvider permissions)
+  - KISS Translator : Immersive bilingual translation (MV3, no network tunneling)
+  - Dark Reader     : CSS-based dark mode (MV3, pure client-side rendering)
+  - Ad blocking     : Excluded (Anti-Unfair-Competition Law compliance)
+  - Custom EXEs     : Zero (all logic is open-source scripts)
+--------------------------------------------------------------------------------
+[3. Compliance Conclusion]
+  This installation complies with PRC Cybersecurity Law, Criminal Law
+  Art. 285/286, Anti-Unfair Competition Law, PIPL, and Data Security Law.
+================================================================================

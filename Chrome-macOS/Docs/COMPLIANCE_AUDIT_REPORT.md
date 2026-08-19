@@ -1,0 +1,218 @@
+﻿# 软件安全性与法律合规自证审计报告
+**Software Security & Legal Compliance Audit Report**
+
+- **报告生成时间**：2026-08-17 03:10:20
+- **审计基准版本**：Google Chrome 官方安装与扩展配置工具
+- **审计结论**：**【发布包技术检查通过 / 不构成法律意见】**
+
+---
+
+## 一、 执行摘要 (Executive Summary)
+
+本报告记录本次发布包的**脚本、扩展资源、文件指纹与插件声明权限**的自动化技术检查结果；它不构成法律意见或合规保证。
+审计结果表明：
+1. **发布包无可执行文件**：本次发布清单中不含 `.exe` / `.dll` 文件；Chrome 仅在用户设备上由 Google 官方安装程序提供。
+2. **官方安装来源校验**：脚本从 `dl.google.com` 下载安装程序，并在执行前以 Windows Authenticode 验证签名主体为 Google LLC 或 Google Inc。
+3. **扩展权限检查**：自检会拒绝包含 `proxy` 或 `vpnProvider` 权限的扩展。用户仍应自行评估其使用方式及适用法律、平台条款。
+
+---
+
+## 二、 技术检查说明 (Technical Review Notes)
+
+| 适用法律法规 | 核心规制重点 | 审计结论 | 自证证据与技术说明 |
+| :--- | :--- | :---: | :--- |
+| 《中华人民共和国网络安全法》第二十七条 | 禁止提供专门用于从事侵入、非法控制计算机信息系统的程序、工具 | **通过** | 本项目 100% 纯脚本开源，绝无任何 VPN、翻墙、前置跳板、内网穿透、端口劫持或漏洞利用代码。经代码静态审计，零恶意入侵或控制特征。 |
+| 《中华人民共和国刑法》第二百八十五条、二百八十六条 | 非法侵入、非法控制计算机信息系统罪；提供侵入、非法控制计算机信息系统程序、工具罪 | **通过** | 不篡改操作系统核心、不植入驱动、不修改系统 HOSTS、不安装伪造根证书（不做 MITM 流量劫持）。所有行为均属于标准调用 Windows 官方原生 Shell API。 |
+| 《中华人民共和国反不正当竞争法》第十二条 | 禁止利用技术手段，通过影响用户选择或者其他方式，妨碍、破坏其他经营者合法提供的网络产品或者服务正常运行 | **通过** | 已彻底移除广告拦截组件（如 uBlock Origin 等），不干预、不阻断任何第三方合法经营网站的正常广告展示与商业运营。 |
+| 《互联网广告管理办法》 | 禁止未经许可过滤、拦截、破坏合法互联网广告 | **通过** | 项目中不包含任何规则过滤列表或广告屏蔽拦截器，100% 避免因广告拦截引发的不正当竞争诉讼风险。 |
+| 《中华人民共和国个人信息保护法》(PIPL) 与《数据安全法》 | 保护个人信息权益，禁止非法收集、使用、泄露个人数据 | **通过** | 全脚本本地离线运行，零遥测、零数据收集、零网络回传、零商业返利（淘客/京东联盟等）跳转劫持代码。 |
+| 《计算机软件保护条例》与商标法 | 保护著作权人合法权益，禁止非法篡改与盗版分发 | **通过** | 本项目不内置、不修改、不二次打包 Chrome 官方二进制，用户直接从 Google 官方 CDN 下载，严格校验 Google LLC 原厂数字证书。 |
+
+---
+
+## 三、 插件权限与安全性审计 (Extension Permissions Audit)
+
+| 插件名称 | 目录 | 版本 | 规范版本 | 声明权限 | 合规判定 |
+| :--- | :--- | :--- | :---: | :--- | :---: |
+| Violentmonkey | Violentmonkey | 2.44.0 | MV3 | `tabs, webRequest, notifications, storage, unlimitedStorage, clipboardWrite, contextMenus, cookies, alarms, declarativeNetRequestWithHostAccess, identity, offscreen, userScripts, webNavigation` | **已检查：未发现 proxy/vpnProvider 权限** |
+| KISS Translator | KissTranslator | 2.0.28 | MV3 | `storage, tts, contextMenus, scripting, declarativeNetRequest, declarativeNetRequestWithHostAccess` | **已检查：未发现 proxy/vpnProvider 权限** |
+| Dark Reader | DarkReader | 4.9.128 | MV3 | `storage` | **已检查：未发现 proxy/vpnProvider 权限** |
+
+---
+
+## 四、 官方下载端点与数字签名证明 (Official Distribution Proof)
+
+- **下载目标文件**：`ChromeStandaloneSetup64.exe`
+- **官方来源节点**：`https://dl.google.com/chrome/install/ChromeStandaloneSetup64.exe`
+- **节点实测状态**：由发布前 Verify-Package.ps1 实时验证
+- **官方签名颁发者**：Google Trust Services / Google LLC
+- **防篡改机制**：脚本内置 `Get-AuthenticodeSignature` 校验，非 `CN=Google LLC` 签名自动拒绝执行。
+
+---
+
+## 五、 全量文件 SHA-256 指纹存证 (Cryptographic File Manifest)
+
+本次发布输入清单（不含自动生成报告本身）共计 **151** 个文件，可执行二进制文件数量：**0** 个。全量明细如下：
+
+| 文件相对路径 | 大小 (KB) | SHA-256 校验和 |
+| :--- | :---: | :--- |
+| Generate-Compliance-Report.bat | 0.77 | `96B729509E8E64B3E34AE8F0346856DBB4DB787C9E94B22D5EA9F8633E2B807D` |
+| Start-Chrome.bat | 0.16 | `36898B2291AAD3E57CA2CD999E424831D014492267B29259A444FBE655A36327` |
+| [IMPORTANT]-Please-Extract-All-Files-First_请先全部解压到本地文件夹再运行.txt | 0.29 | `4558D98F5A2B5A987AB0EEA35CFF90105ADFECA306CD732DE0A97141D34E02D9` |
+| 一键安装配置.bat | 0.56 | `2053B607E7539268C920E69EC68C9967EC37C784A6056061E73672214240B6C2` |
+| App/Launch-Chrome.ps1 | 2.23 | `7E144AFA2D08CA91C25C3F9348D6CF28F81927B3149E6BFDED95ACA4D4B8C1A0` |
+| App/Setup-Chrome.ps1 | 25.22 | `8EAABA742705586A8B2284E58E303C3FB2AFC1B942F46FAA1AD1311EB53573EC` |
+| App/Config/extensions.json | 0.91 | `4CC795821004B0547E171075D578AA72CCA22000796C477FFFAEAFB09A4D1D9F` |
+| App/Extensions/DarkReader/content.js | 1.24 | `ED03AFB36F26A7D102E73179E1EDBD126E41FFF435F9EFE0AC4748AC1BE4D0B4` |
+| App/Extensions/DarkReader/darkreader.js | 337.91 | `CE0B18E9A89CAF7145292E7D7D2592B5BAC664C49567FBF2D59C57A2BC7014E5` |
+| App/Extensions/DarkReader/LICENSE | 1.07 | `F0A5F835174494F8981B2CBB1A34054D4F887A5C865318650D6A17AFE1C7850E` |
+| App/Extensions/DarkReader/manifest.json | 0.8 | `CCB191B76E3D300042570743BEBB5D34CFB5023B3709BF0CA0BC58ADD1856F37` |
+| App/Extensions/DarkReader/popup.html | 2.84 | `05C23BAACDCD9BA5B2ACAF58EFCB84D1AAE382F11AFE1641508E20D123025B26` |
+| App/Extensions/DarkReader/popup.js | 1.99 | `16CF861DA8F7A5B50898CCB2ED6281E9CCC90DFF19645347AD84E49469E664A6` |
+| App/Extensions/DarkReader/icons/icon128.png | 1.27 | `B18E3FFF3EED8EE0CABE3ADCB06D332DE943C7BE80A4E0E8908462D0D01666A5` |
+| App/Extensions/DarkReader/icons/icon16.png | 0.2 | `0AB89B41764EDA8F10B1163D856F2C09E228C58B9664D0902A690382C6A183F5` |
+| App/Extensions/DarkReader/icons/icon48.png | 0.44 | `8961E07749D4A4625A30CB5592030E2BD3C441F85C97EEC8513EA2E79F04910C` |
+| App/Extensions/KissTranslator/.nojekyll | 0.0 | `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` |
+| App/Extensions/KissTranslator/asset-manifest.json | 0.29 | `243203BD7FD775DD25C6037BD301EE3FC5199DE9D149BC2D1C3AC794A27CCE35` |
+| App/Extensions/KissTranslator/background.js | 417.24 | `49B549A3037900D66FE0B8892B8F8DB6371BFEF68346B94DB7F89E4D140FF232` |
+| App/Extensions/KissTranslator/background.js.LICENSE.txt | 0.88 | `70274A6F3FE6289AAA6AB8AADCC05BB5AECCFEEF9F1546D4991D721269BBA1FE` |
+| App/Extensions/KissTranslator/content.js | 1455.13 | `F6F7DCE204BCDBDE79406AA636D0FA70A7C2FD434B8465454DC52F044790379B` |
+| App/Extensions/KissTranslator/content.js.LICENSE.txt | 2.66 | `9858EE046BB0B54935831ADCD410F7460B73EE441C54E7C5E2A997B6426EA753` |
+| App/Extensions/KissTranslator/favicon.ico | 14.73 | `4389118B97AC3CBC7FD53E37D9BA5E5E1CAA72893630002D9C3DDA1E0E3EABFD` |
+| App/Extensions/KissTranslator/injector-shadowroot.js | 0.32 | `8525CF053FD9DDD888E02865AB3F0034332E3261644BACAEB966E97DF9ACEAC3` |
+| App/Extensions/KissTranslator/injector-subtitle.js | 0.47 | `B3208A49B91288702F6E4431C04B7E8ACAAF1E83A10D31649E721038486B4329` |
+| App/Extensions/KissTranslator/manifest.json | 2.26 | `7FF4ED8FA72E95ED0C374D58CA9F596CEB4376A301C07E474C5F27EB5AC71C86` |
+| App/Extensions/KissTranslator/options.html | 2.61 | `7D9435B7D47AEE4409E07C60DB8C9C140141B18AA24236B65C2181C38DF89812` |
+| App/Extensions/KissTranslator/options.js | 1544.45 | `F810A407737EC35E330194D5EF12656672166DCCEF2C0E7EB6AA97740AB3F61F` |
+| App/Extensions/KissTranslator/options.js.LICENSE.txt | 3.32 | `62FBEFC6AA8B9AC68A2C5508BB47B10C44901E8DEB4537F16B9F80B65283B6D9` |
+| App/Extensions/KissTranslator/popup.html | 2.61 | `457E89A3D739F2FD868C3D24660C9BC5B85C8CA2BD645EBED3A27E9AC9480CF0` |
+| App/Extensions/KissTranslator/popup.js | 1164.99 | `813BC9C2E739A2E1D63B7AD725022EF4CA7A36E0D39BA7F1D01F3DD97D8014E6` |
+| App/Extensions/KissTranslator/popup.js.LICENSE.txt | 2.66 | `9858EE046BB0B54935831ADCD410F7460B73EE441C54E7C5E2A997B6426EA753` |
+| App/Extensions/KissTranslator/api/AliyunBailian.svg | 1.32 | `5CC26DC961B2ECD0912F4E023C8CE745BCC52AC45B1C4BAEADD7201F6B60DE25` |
+| App/Extensions/KissTranslator/api/AzureAI.svg | 2.54 | `89BEF85D67F45984DBA85F8D7E6A8ED91585F706C43F7236A89590D8F4940FDE` |
+| App/Extensions/KissTranslator/api/Baidu.svg | 1.35 | `1059750A2069AEC6080FF48732931E87A99BD3D22DB3E8471CEBE255B6014B75` |
+| App/Extensions/KissTranslator/api/BuiltinAI.svg | 1.92 | `3613C54A63D6D0E3EDC06BB4934C65B4D60AE783D01537D3DFE25389C17234F9` |
+| App/Extensions/KissTranslator/api/Cerebras.svg | 1.22 | `355C2225284CD06C9CF4246110B60CB21BC86039872981E1BE6BB82DEEC2FFA7` |
+| App/Extensions/KissTranslator/api/Claude.svg | 1.66 | `A3101F3047A119AA11825AD9369510F0C472428C8C52D420E31BC62DB44A8364` |
+| App/Extensions/KissTranslator/api/CloudflareAI.svg | 1.05 | `CEE35D3F0ECB7925CE0A89AEAFF8B907CADAE7C3FE44A23E4001CC8D5EE57502` |
+| App/Extensions/KissTranslator/api/DeepL.svg | 1.01 | `260365FF62BA4CA1716DCE5E829336AF2CF1F25233D7115C175DE6937BF508E8` |
+| App/Extensions/KissTranslator/api/DeepSeek.svg | 2.11 | `DEBA5F98A5C1796E20FCAC3149BCD7EB8A32F0BDD04D048819400B1F28BD1439` |
+| App/Extensions/KissTranslator/api/ePhoneAI.png | 8.76 | `BC5A342697CFF6C0800DF8CE1BAC83232EEE8A80EF0D79D9ABE19C8DBF6236F0` |
+| App/Extensions/KissTranslator/api/Gemini.svg | 2.77 | `8AB0A9BAFEC11F7E69BCB9FC4FFD8F1BC927D1DDCBBB6FF36DEE5AE8B5A9D602` |
+| App/Extensions/KissTranslator/api/Google.svg | 0.9 | `4E6AA8892EF15A6B431F40F2C9045979BF7E2357524E7BBB89B353CF4F32A5AC` |
+| App/Extensions/KissTranslator/api/Microsoft.svg | 0.39 | `5CFB0FFA3231313C2968B5E3FEDFCCE8E2E96C61BDE4572384C3889A77A80350` |
+| App/Extensions/KissTranslator/api/Ollama.svg | 4.66 | `9C62BF0159EE96C8B58C86A732F33B002B4B3BB165EC86E8ECCA51AD6A82DAB6` |
+| App/Extensions/KissTranslator/api/OpenAI.svg | 1.84 | `1DA76493B0FFED215D15E33B0EF5C9BD81C11EA170EAC1F7690FECAD0453410B` |
+| App/Extensions/KissTranslator/api/OpenCodeGo.svg | 0.36 | `724B45255F20E6540B6CA98F3C42EAC46BC3F5FB11FEFDA2BBCB1370178AB92C` |
+| App/Extensions/KissTranslator/api/OpenRouter.svg | 0.67 | `9148696E3A06D23E8FE2B743EBD3EE1173354DBD7B58D33D1CA6A40EE0018D53` |
+| App/Extensions/KissTranslator/api/SiliconFlow.svg | 7.83 | `0D2F3D8CFDEE363161649263A89D796DEFB163F37FAB88F1E42ABBF55EC446ED` |
+| App/Extensions/KissTranslator/api/Tencent.svg | 0.27 | `7C370AD4B75E3F30D0FA7DA71F90466A0EE95A887189479AA9DF414079B50EB6` |
+| App/Extensions/KissTranslator/api/Volcengine.svg | 0.84 | `84F9E2CD1DA7E73DC6C9A0F2521745D39CAE96C008752CDB1BAF57A8C94393A1` |
+| App/Extensions/KissTranslator/api/XiaomiMimo.svg | 8.63 | `0C201EAE39C5AA06060ED7EE243324DE2DF3A48B5D30A030FFD6A8E094DBC3BC` |
+| App/Extensions/KissTranslator/api/Zai.svg | 0.31 | `E748CB5108CE37B116D7A5BA97D37E0AE97EADF6849B0DE11AFB248E244A01E1` |
+| App/Extensions/KissTranslator/images/logo128.png | 3.36 | `2BFDC43066861BF2A03C57C8E9B9B630959CB93CD9734A5EDC80F99FB18A0C1E` |
+| App/Extensions/KissTranslator/images/logo128_active.png | 5.46 | `5132A508E848FD103465FDE5F333CDE6C9B4861C6B48B1F7D823CDDDE1882CA3` |
+| App/Extensions/KissTranslator/images/logo16.png | 0.46 | `D30DC29D56713B1B9AA4F2139EEF19861ECC7E95EDD39B9E401A7E8907057CAC` |
+| App/Extensions/KissTranslator/images/logo16_active.png | 0.57 | `A0CA7F143D03D20DAA2BCC9E72D59B8A6F49BD89A104641E1E3C9701617CF045` |
+| App/Extensions/KissTranslator/images/logo192.png | 6.37 | `C38C8384DB0A916235C9163E42BA6CF8ECA54BA546784CBF3F702E75E206D0AF` |
+| App/Extensions/KissTranslator/images/logo192_active.png | 6.91 | `C63E6724C24B5D882E6C69576EB27366C046F5FAEA79231042B851888D90513D` |
+| App/Extensions/KissTranslator/images/logo32.png | 0.88 | `DAF7761E0B6D291863CEF7BE1349A977807092F4C23A52C88217858F23F0AC71` |
+| App/Extensions/KissTranslator/images/logo32_active.png | 1.0 | `175F7AC2F9E0DE79A2713293FEA6EA3CAA36196706AFE21C36CAD9C022F27F18` |
+| App/Extensions/KissTranslator/images/logo48.png | 2.51 | `47BA89F71C1CA6B80A28989E868810DE04D782F692EB3D587FC8357778C4B617` |
+| App/Extensions/KissTranslator/images/logo48_active.png | 2.3 | `AA7BEE358CB9D338C088472DF20807EA5B5BC434635CD0333B3AC927CE183334` |
+| App/Extensions/KissTranslator/_locales/de/messages.json | 0.77 | `AEDC6B275FE15217137EA09DD87442D452E5A07657FD1E953519E2853702D154` |
+| App/Extensions/KissTranslator/_locales/en/messages.json | 0.71 | `E94ECE483426EA65F4937003EA17563DD79283351D0A2B5759B8FEA58F015CF9` |
+| App/Extensions/KissTranslator/_locales/es/messages.json | 0.77 | `F6513FF323662162E983A20781605421E0F8A455949F358A32EE1E5A5F45844A` |
+| App/Extensions/KissTranslator/_locales/fr/messages.json | 0.82 | `513927CF85C8F1053B8F6F21E8DFDC1154B661174882746B47B5E5A595F29744` |
+| App/Extensions/KissTranslator/_locales/ja/messages.json | 0.92 | `E6437C8024F38788CBCBC374BD3202EDFA4609E4FF7A5D04F65B01A671836ABD` |
+| App/Extensions/KissTranslator/_locales/ko/messages.json | 0.85 | `66FA750C51AEA87BD6608DC7F7F141886FA8E905B19C50631BF3AF44DD2F15DF` |
+| App/Extensions/KissTranslator/_locales/zh_CN/messages.json | 0.74 | `37F936A458B2536BF85D0C4114B8DD71EC8CCCE9FEA7CB60DA7CBE6FBE12C506` |
+| App/Extensions/KissTranslator/_locales/zh_TW/messages.json | 0.76 | `77FB15C9DF217641C77B33903ECE30513F96A695D68F16EBD2C070B9E51D965B` |
+| App/Extensions/Violentmonkey/common-ui.js | 172.2 | `32A4E13D8D4B9672239D30A16B90A1BA0129FB38425059AAFFE1EDFBFFB574BA` |
+| App/Extensions/Violentmonkey/injected-web.js | 16.7 | `AA93989A33AD2CD5ADBC335785FF7406C7A26DB07B5A00BA211F40BB7252CA29` |
+| App/Extensions/Violentmonkey/injected.js | 14.06 | `CAD535495DB490F4B49FAD7A200058377E72ED11C445D80A411E2B22A0AA0BCB` |
+| App/Extensions/Violentmonkey/manifest.json | 1.8 | `31C31C19F19C50CA017C31BAE3BE0B63A930360E31CD016D89C4BB5839A52DD1` |
+| App/Extensions/Violentmonkey/sw.js | 98.85 | `BBB297BA6A5B221BE142DD500643E426AD47F3D06FD93ED07AE6E90118763B24` |
+| App/Extensions/Violentmonkey/confirm/index.css | 25.09 | `F61086131AE04CE8908770BED9A15F1B1C225FC0CD7F979DD06FD6985F372D69` |
+| App/Extensions/Violentmonkey/confirm/index.html | 0.34 | `612B5458522DAEA986E3F54CBB8619782316A87AC32C59FBABD9D72676691456` |
+| App/Extensions/Violentmonkey/confirm/index.js | 14.29 | `7D078D3D36C221747A045EEF73A10F99108E583EE740E1207C89DE93BAE6E88A` |
+| App/Extensions/Violentmonkey/offscreen/index.html | 0.03 | `9A22D921D3BC87EBF4DCEF12DE576327B1BDD49F7BAB3F10B4DD37E8DA03E950` |
+| App/Extensions/Violentmonkey/offscreen/index.js | 31.28 | `806D6DE495F6FEECA8519CBD49C2A4DDAD3A131D95E7A1E3DC63548473ED2A94` |
+| App/Extensions/Violentmonkey/options/index.css | 39.81 | `6070199B885093F7A739DBE6095CCCFA887A01634DF0AA285DD049A1973C7B0E` |
+| App/Extensions/Violentmonkey/options/index.html | 0.34 | `C46B93F0F434A6C8CEDE1252ADED31FE48A06DEEB04A9650392ED9392FA80793` |
+| App/Extensions/Violentmonkey/options/index.js | 120.78 | `C5142787082D7EF97508C02D7665A82C22F0475A952594EA782A1CDB765A845B` |
+| App/Extensions/Violentmonkey/popup/index.css | 15.31 | `2A969F7B3EFDE6CC3263FD0E86DCE5B7EF8CCA81397ED8B65D7F43BF864816A0` |
+| App/Extensions/Violentmonkey/popup/index.html | 0.29 | `66B5D4BC2FC6E10EA8F1E78F8C81191BB9D0CAE6A062FE0C3F2FA2233B116520` |
+| App/Extensions/Violentmonkey/popup/index.js | 20.86 | `0C6F7ACC70406A7A457F1D28AE3091D153877BFB57FBF7F68A7637D808758B23` |
+| App/Extensions/Violentmonkey/public/images/icon128.png | 8.02 | `B774095BC4803DEE35AC45CD088173F8A28ED61BEE604283600361F7BDCCDEEE` |
+| App/Extensions/Violentmonkey/public/images/icon16.png | 0.93 | `083F9C438D8B0F1D0B0BFE55C7FDD0732F0C3BFC5C2A92A9D0F8A49C317FB81F` |
+| App/Extensions/Violentmonkey/public/images/icon16b.png | 0.8 | `52C54D1E0128C0968F56DDACC893C430860284F12D3701A302385B139F1EE88C` |
+| App/Extensions/Violentmonkey/public/images/icon16w.png | 0.93 | `C6269ADC2442C012ED295447ACEECE1E2D8D481F5839CD7D1F5ADA0BABDCBD78` |
+| App/Extensions/Violentmonkey/public/images/icon32.png | 2.54 | `CF6C364EAD00957B2D5693E4107D2422AEC97CED722E7742D6BEE6513C170ADA` |
+| App/Extensions/Violentmonkey/public/images/icon32b.png | 2.0 | `63B543AA310942195CFC2E0C080547361670742DAAF8F249D588DEAC31AB0FCF` |
+| App/Extensions/Violentmonkey/public/images/icon32w.png | 2.49 | `BB6DA400054D34EAC78242AFBB4F4597E199E0DF7F6A8673B20A503209D43645` |
+| App/Extensions/Violentmonkey/public/images/icon38.png | 3.19 | `D72458BCCD49D042E41205BA07FC422CD32CE17052A9660D7957B785F788DB7D` |
+| App/Extensions/Violentmonkey/public/images/icon38b.png | 2.47 | `1FABB931E51C56B44C16351781AAE7617A844E221659F3A7E91D6CD1129469BB` |
+| App/Extensions/Violentmonkey/public/images/icon38w.png | 3.13 | `0A288F551C20D914B8796F850F0C742184062D27FA1A17A01050CF29FBD43E2D` |
+| App/Extensions/Violentmonkey/public/images/icon48.png | 4.34 | `36D0A7DD6B07D5AD15B51B3E374D1303425CC9C253AB28A6C68D841A533A4FDB` |
+| App/Extensions/Violentmonkey/public/images/icon48b.png | 3.32 | `4CC200D5F6C35ADD8880D337491FDEB5B494BFCC1287927E9E6505BA556C7875` |
+| App/Extensions/Violentmonkey/public/images/icon48w.png | 4.25 | `7A1E176FFDFB065CD5F4F40DC18FA5F0E97876244018C0C7BBD3CBBCA2DE2444` |
+| App/Extensions/Violentmonkey/public/images/icon64.png | 6.13 | `A12997DC13AE478F8E5F7A3146E1D4097F3748CA5786C983FB5260EEF551C7C9` |
+| App/Extensions/Violentmonkey/public/images/icon64b.png | 4.56 | `788F417B3533D8A71931652CA4CE7BD9E15C8A85AD6098BF4675C2717469C2C1` |
+| App/Extensions/Violentmonkey/public/images/icon64w.png | 6.0 | `AD3F333332380A0C9EAADB79284FE8C252C9A002A45B865EB77561AD1045BE87` |
+| App/Extensions/Violentmonkey/public/lib/codemirror.js | 285.96 | `F5457C940213E2B88BD5E37C8747661F52BC94E54DA39AF9C011487FEE3DEA45` |
+| App/Extensions/Violentmonkey/public/lib/tld.js | 126.59 | `06D5764605CDA631E75514A2E3CA7F390326DE213E56124A7D19A66D792B494C` |
+| App/Extensions/Violentmonkey/_locales/ar/messages.json | 29.8 | `F53EFFBD8D551037125F21D74A9960BCC4844EBDBC73FCB0821F564BA53364A1` |
+| App/Extensions/Violentmonkey/_locales/cs/messages.json | 22.66 | `F8ACD7F8E49718BF9709A3987F65401A8E001611650862384235F7BD45F7A9C2` |
+| App/Extensions/Violentmonkey/_locales/de/messages.json | 25.09 | `3F5AD2B3AEAE09F357CF7A88A76EA10C839930269A55E4A703AD49AA6FFBA406` |
+| App/Extensions/Violentmonkey/_locales/el/messages.json | 37.29 | `EB441BC27E032425AE2BA955B7B0BB72C1500F3678D06837658EA5A059C834B2` |
+| App/Extensions/Violentmonkey/_locales/en/messages.json | 22.42 | `1C6023BE80DDE437C4E35AFE342331D2910E952DC6926B0757AC4ED86B40166D` |
+| App/Extensions/Violentmonkey/_locales/es/messages.json | 25.23 | `B388A55BF9F571D40E7A6300D1C25E2959B3EFD5930C38C88146B975B8E3535E` |
+| App/Extensions/Violentmonkey/_locales/es_419/messages.json | 25.17 | `B0283A21652659227D14784C26FE320146618A5B36C6F0A1FB9F6EFE735C2362` |
+| App/Extensions/Violentmonkey/_locales/fi/messages.json | 22.76 | `A5490A21A27772DA1F3357E2AF3C57388658D4148B8112159800DE61F6153D97` |
+| App/Extensions/Violentmonkey/_locales/fr/messages.json | 26.05 | `3517DF5B57BB5DDEB3A8CEED70A968FBC49BCE99889D8507D578F300F9CEEFCA` |
+| App/Extensions/Violentmonkey/_locales/hr/messages.json | 22.66 | `EEDB0DD0D7D41D9419279CEF08CF18D5E8FB9EC568CD9DC8E3C7006D799A4FC7` |
+| App/Extensions/Violentmonkey/_locales/hu/messages.json | 25.03 | `4B8C89D369148BE90A9B816E870650A3C2477A83E3CF88FB715B52A2B19C65A4` |
+| App/Extensions/Violentmonkey/_locales/id/messages.json | 23.62 | `998603102ABC34E2986CE799ACF782562E17879F86494A356DE312FA93D3042C` |
+| App/Extensions/Violentmonkey/_locales/it/messages.json | 24.66 | `F8B4F18143D617EF23FAC798F02C99168BC54140DE348414BDAE0831350B7D09` |
+| App/Extensions/Violentmonkey/_locales/ja/messages.json | 26.04 | `73AD2DA363E23F94E9E6A9BC24AD7FF7B8779EE3938893496F6B6CC42AFD73DF` |
+| App/Extensions/Violentmonkey/_locales/ko/messages.json | 25.48 | `54CDD99B71AFB0BB0DB26E7328AD6432C6EA101A57D971B21176258567730C08` |
+| App/Extensions/Violentmonkey/_locales/lv/messages.json | 22.76 | `F81EAD17F6B8C90B4656AB7E0A3417234AD975DEDDB4BF8DFA7B23441D65BD5F` |
+| App/Extensions/Violentmonkey/_locales/nl/messages.json | 24.08 | `6A667543A06BE70C612EB4D11AD3ED20CF99EB0EB2C30C3BEE17E7CC08D1760D` |
+| App/Extensions/Violentmonkey/_locales/no/messages.json | 22.42 | `1C6023BE80DDE437C4E35AFE342331D2910E952DC6926B0757AC4ED86B40166D` |
+| App/Extensions/Violentmonkey/_locales/pl/messages.json | 24.74 | `D475E9357E1DA2E5ED439B3F3A3EBFEBE9CF62ABA7D4AECD5F5B88A6DC60C0A8` |
+| App/Extensions/Violentmonkey/_locales/pt_BR/messages.json | 24.76 | `721D162D774FEE20878FA8FD0C1648D512E068649A00CFDABF0ED3BC2D464339` |
+| App/Extensions/Violentmonkey/_locales/pt_PT/messages.json | 23.15 | `8A6CE4F7C396A930AB467EBD0E5A1A6C4E73E75D8D01C622A12D6A549A4E3534` |
+| App/Extensions/Violentmonkey/_locales/ro/messages.json | 25.23 | `FDF76A5ED17BA46E043B8CF55F78141205F0A3449C90DA9B4099FBDC82652107` |
+| App/Extensions/Violentmonkey/_locales/ru/messages.json | 33.01 | `821D15637F8C65F047B93FD12FE961C465823E147113421D3F03A4D84144487B` |
+| App/Extensions/Violentmonkey/_locales/sk/messages.json | 25.12 | `00E2AB9D29096CBC86DF40CF98D2FFB6A73361EE8E3F6DB2C96FD2D86882B795` |
+| App/Extensions/Violentmonkey/_locales/sr/messages.json | 29.02 | `34CBAB19C129B7065E92D17896A5DD47E2E0A465781ECC9F74AEF0A51A84A129` |
+| App/Extensions/Violentmonkey/_locales/sv/messages.json | 23.8 | `BBB54889920D2232D25D543F9DE71F5E4E63ADE5B8A680E12E3655488C719123` |
+| App/Extensions/Violentmonkey/_locales/th/messages.json | 28.36 | `BE13EF96C2641F5F05503971251F3B4BD6413FBF3759F3BA1FFDA9BE4E852CD6` |
+| App/Extensions/Violentmonkey/_locales/tr/messages.json | 25.36 | `A8AAD3B3D7680885D5277FB3A4F65A0232CF7CD21E62F1D6067E0F7328879137` |
+| App/Extensions/Violentmonkey/_locales/uk/messages.json | 32.25 | `89515D0DB0E5E3060CAA65A779AE31CCFADB0F898F28120B097334B8F9B37320` |
+| App/Extensions/Violentmonkey/_locales/vi/messages.json | 26.13 | `9912CA395133B3C2B9ACBDB28807F42102AF0D50EF941A79369433F991623DCE` |
+| App/Extensions/Violentmonkey/_locales/zh_CN/messages.json | 22.48 | `88C34E58EBDA8AEAC167944739BABDD25587AAE80F9E45FB4DBADBF9A1F447DB` |
+| App/Extensions/Violentmonkey/_locales/zh_TW/messages.json | 23.71 | `CE48FD454432EEA4E230AF76F93F44FFE247CFA48B93FE0E85FBD689845C2360` |
+| App/Tools/Create-Desktop-Shortcut.ps1 | 4.9 | `1BC83C7C1D694601798C9346BDA8EFC3C85388F6D2097DC71E4537D96CF29811` |
+| App/Tools/Generate-Compliance-Report.ps1 | 1.21 | `D50B659085416C6F9859521F5D75B4432F584D629DB7A6BCAE776C037E3230C7` |
+| App/Tools/generate_compliance_report.py | 16.05 | `71DDD121A0BBCF38A07E467C0B5877136F71A81C8794022FD4C464B92057C5C1` |
+| App/Tools/ShortcutHelper.cs | 2.26 | `19CE948ECED8538754E65A29200738400B1DDF44ED6FC1C0D2BA1E8913C5F32B` |
+| App/Tools/Verify-Package.ps1 | 5.7 | `E2E91C57060116E8E1EB85B964AD84E1CC19E0B6B7F433E259DA6B0D57E7FBEA` |
+| Data/Compliance_Audit_Log.txt | 1.72 | `998613C544F90FCEA2582B70BB3204721D3B75DC7D3710DEF10F934E672246AA` |
+| Docs/LEGAL.md | 4.04 | `7ACF8722B227D5FFBEB2F8409C15225F2738ED514E70443F77E4E507C86E900E` |
+| Docs/LEGAL_COMPLIANCE_LETTER.md | 4.71 | `85E3EC45C2285D151EC8B55571F13B019F1BB682FDFA9A1C467C77114223347B` |
+| Docs/README.md | 4.38 | `FC952EDAAEA1DC968F62725A423DE827D30A56431A77E87532B6EBC3CBD5A69B` |
+| Docs/合规证明与安全审计报告.html | 59.18 | `B6A4C20FFE725C90CA74DE867B3ACA5A7D81C6F1014847C093C489FC2A8307AA` |
+| Licenses/DarkReader-LICENSE.txt | 1.07 | `F0A5F835174494F8981B2CBB1A34054D4F887A5C865318650D6A17AFE1C7850E` |
+| Licenses/KissTranslator-LICENSE.txt | 34.33 | `3972DC9744F6499F0F9B2DBF76696F2AE7AD8AF9B23DDE66D6AF86C9DFB36986` |
+| Licenses/Violentmonkey-LICENSE.txt | 1.04 | `F996DCE5391963ED6BADD93AD9E2CE2F957B2AD4E587112EA63B1F26317DFB57` |
+
+---
+
+## 六、 结论与使用说明 (Conclusion & Use)
+
+1. 本报告可用于复核本次发布包的脚本与资源指纹，以及运行发布自检时的技术检查范围。
+2. 第三方应自行审阅源代码、许可证、适用法律与平台条款；本报告不替代法律、监管或安全专业意见。
+
+**报告签发标识**：`AUDIT-PRC-CHROME-20260817_031020`

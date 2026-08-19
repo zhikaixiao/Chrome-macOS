@@ -1,0 +1,31 @@
+{
+  "extensions": [
+    {
+      "name": "Violentmonkey",
+      "folder": "Violentmonkey",
+      "manifestVersion": 3,
+      "defaultLocale": "zh_CN",
+      "version": "2.44.0",
+      "description": "纯净开源用户脚本管理器",
+      "source": "https://github.com/violentmonkey/violentmonkey/releases/tag/v2.44.0"
+    },
+    {
+      "name": "KISS Translator",
+      "folder": "KissTranslator",
+      "manifestVersion": 3,
+      "defaultLocale": "zh_CN",
+      "version": "2.0.28",
+      "description": "沉浸式双语对照网页翻译",
+      "source": "https://github.com/fishjar/kiss-translator/releases/tag/v2.0.28"
+    },
+    {
+      "name": "Dark Reader",
+      "folder": "DarkReader",
+      "manifestVersion": 3,
+      "defaultLocale": "zh_CN",
+      "version": "4.9.128",
+      "description": "实时深色护眼模式 (MIT开源/纯前端渲染)",
+      "source": "https://github.com/darkreader/darkreader"
+    }
+  ]
+}

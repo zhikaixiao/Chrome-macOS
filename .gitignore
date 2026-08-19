@@ -1,0 +1,27 @@
+# Chrome binaries (downloaded at setup time)
+App/Chrome-bin/
+Chrome-macOS/App/Chrome-bin/
+Chrome-Enhanced/App/Chrome-bin/
+Chrome-UltraLite/App/Chrome-bin/
+Data/googlechrome.dmg
+Data/UserData/
+Chrome-macOS/Data/UserData/
+
+# Release archives
+*.zip
+*.7z
+*.sha256
+Release/
+
+# Temporary test / sandbox
+SandboxTest/
+SandboxTest2/
+旧版成品/
+*.tmp
+*.log
+setup_test_log.txt
+sim_install_log.txt
+
+# Mac / Windows temp
+.DS_Store
+Thumbs.db
