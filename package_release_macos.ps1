@@ -6,12 +6,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $OutputDir) {
-    $OutputDir = Join-Path $ScriptDir "Release"
+    $OutputDir = Join-Path $ScriptDir "Release\macOS"
 }
 $SourceDir = Join-Path $ScriptDir "Chrome-macOS"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "     Building macOS Release Packages: Enhanced & Clean Editions                 " -ForegroundColor Yellow
+Write-Host "     Building macOS Release Packages to: Release\macOS                          " -ForegroundColor Yellow
 Write-Host "================================================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path $SourceDir)) {
@@ -85,6 +85,7 @@ Write-Host ""
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "                       Build Completed Successfully!                            " -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "1. Enhanced Edition (With Plugins) : $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Yellow
-Write-Host "2. Clean Edition (No Plugins)      : $CleanZip ($CleanSize KB)" -ForegroundColor Yellow
+Write-Host "Dedicated Directory : $OutputDir" -ForegroundColor White
+Write-Host "1. Enhanced Edition : $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Yellow
+Write-Host "2. Clean Edition    : $CleanZip ($CleanSize KB)" -ForegroundColor Yellow
 Write-Host "================================================================================" -ForegroundColor Cyan
