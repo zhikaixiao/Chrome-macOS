@@ -4,6 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
@@ -13,7 +14,7 @@ if (-not $OutputDir) {
 $SourceDir = Join-Path $ScriptDir "Chrome-Linux"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "     Building Linux Packages with Enclosing Folder (GoogleChrome-Linux)         " -ForegroundColor Yellow
+Write-Host "     Building Linux Release Packages (POSIX Forward-Slash ZIP Archive)          " -ForegroundColor Yellow
 Write-Host "================================================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path $SourceDir)) {
@@ -38,71 +39,59 @@ foreach ($p in $CleanPaths) {
 }
 New-Item -Path (Join-Path $SourceDir "Data/UserData") -ItemType Directory -Force | Out-Null
 
-$StagingParent = Join-Path ([System.IO.Path]::GetTempPath()) ("LinuxStaging-" + [guid]::NewGuid().ToString())
+function Create-PosixZipArchive {
+    param(
+        [string]$SrcDir,
+        [string]$TargetZip,
+        [string]$RootFolderName,
+        [string[]]$Excludes = @()
+    )
+    if (Test-Path $TargetZip) { Remove-Item $TargetZip -Force }
+    $archive = [System.IO.Compression.ZipFile]::Open($TargetZip, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        $allItems = Get-ChildItem -Path $SrcDir -Recurse -File
+        foreach ($item in $allItems) {
+            $rel = $item.FullName.Substring($SrcDir.Length).TrimStart('\', '/')
+            $shouldExclude = $false
+            foreach ($ex in $Excludes) {
+                if ($rel -like $ex) { $shouldExclude = $true; break }
+            }
+            if ($shouldExclude) { continue }
+            
+            $posixEntry = "$RootFolderName/$rel" -replace '\\', '/'
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $item.FullName, $posixEntry, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+}
+
 $EnclosingDirName = "GoogleChrome-Linux"
 
-try {
-    # -------------------------------------------------------------------------
-    # 1. 构建【增强插件版】(带外层 GoogleChrome-Linux 文件夹)
-    # -------------------------------------------------------------------------
-    Write-Host "[1/2] Packaging Enhanced Edition (Enclosed in 'GoogleChrome-Linux' folder)..." -ForegroundColor Blue
-    $EnhancedStaging = Join-Path $StagingParent (Join-Path "Enhanced" $EnclosingDirName)
-    New-Item -Path $EnhancedStaging -ItemType Directory -Force | Out-Null
-    Copy-Item -Path "$SourceDir/*" -Destination $EnhancedStaging -Recurse -Force
+# 1. 构建【增强插件版】
+Write-Host "[1/2] Packaging Enhanced Edition (Enclosed in '$EnclosingDirName')..." -ForegroundColor Blue
+$EnhancedZip = Join-Path $OutputDir "GoogleChrome-Portable-Linux-Enhanced.zip"
+Create-PosixZipArchive -SrcDir $SourceDir -TargetZip $EnhancedZip -RootFolderName $EnclosingDirName
 
-    $EnhancedZip = Join-Path $OutputDir "GoogleChrome-Portable-Linux-Enhanced.zip"
-    if (Test-Path $EnhancedZip) { Remove-Item $EnhancedZip -Force }
+$EnhancedHash = (Get-FileHash -Path $EnhancedZip -Algorithm SHA256).Hash
+Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-Linux-Enhanced.zip.sha256") -Value "$EnhancedHash  GoogleChrome-Portable-Linux-Enhanced.zip" -Encoding UTF8
+$EnhancedSize = [math]::Round(((Get-Item $EnhancedZip).Length / 1MB), 2)
+Write-Host "  * Enhanced Edition: $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Green
 
-    [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        (Join-Path $StagingParent "Enhanced"),
-        $EnhancedZip,
-        [System.IO.Compression.CompressionLevel]::Optimal,
-        $false
-    )
+# 2. 构建【纯净无插件版】
+Write-Host "[2/2] Packaging Clean Edition (Enclosed in '$EnclosingDirName')..." -ForegroundColor Blue
+$CleanZip = Join-Path $OutputDir "GoogleChrome-Portable-Linux-Clean.zip"
+Create-PosixZipArchive -SrcDir $SourceDir -TargetZip $CleanZip -RootFolderName $EnclosingDirName -Excludes @("App/Extensions/*", "App\Extensions\*")
 
-    $EnhancedHash = (Get-FileHash -Path $EnhancedZip -Algorithm SHA256).Hash
-    Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-Linux-Enhanced.zip.sha256") -Value "$EnhancedHash  GoogleChrome-Portable-Linux-Enhanced.zip" -Encoding UTF8
-    $EnhancedSize = [math]::Round(((Get-Item $EnhancedZip).Length / 1MB), 2)
-    Write-Host "  * Enhanced Edition: $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Green
-
-    # -------------------------------------------------------------------------
-    # 2. 构建【纯净无插件版】(带外层 GoogleChrome-Linux 文件夹)
-    # -------------------------------------------------------------------------
-    Write-Host "[2/2] Packaging Clean Edition (Enclosed in 'GoogleChrome-Linux' folder)..." -ForegroundColor Blue
-    $CleanStaging = Join-Path $StagingParent (Join-Path "Clean" $EnclosingDirName)
-    New-Item -Path $CleanStaging -ItemType Directory -Force | Out-Null
-    Copy-Item -Path "$SourceDir/*" -Destination $CleanStaging -Recurse -Force
-
-    # 清空 Clean 版的扩展
-    $CleanExtDir = Join-Path $CleanStaging "App/Extensions"
-    if (Test-Path $CleanExtDir) {
-        Remove-Item "$CleanExtDir/*" -Recurse -Force -ErrorAction SilentlyContinue
-    }
-
-    $CleanZip = Join-Path $OutputDir "GoogleChrome-Portable-Linux-Clean.zip"
-    if (Test-Path $CleanZip) { Remove-Item $CleanZip -Force }
-
-    [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        (Join-Path $StagingParent "Clean"),
-        $CleanZip,
-        [System.IO.Compression.CompressionLevel]::Optimal,
-        $false
-    )
-
-    $CleanHash = (Get-FileHash -Path $CleanZip -Algorithm SHA256).Hash
-    Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-Linux-Clean.zip.sha256") -Value "$CleanHash  GoogleChrome-Portable-Linux-Clean.zip" -Encoding UTF8
-    $CleanSize = [math]::Round(((Get-Item $CleanZip).Length / 1KB), 2)
-    Write-Host "  * Clean Edition:    $CleanZip ($CleanSize KB)" -ForegroundColor Green
-}
-finally {
-    if (Test-Path $StagingParent) {
-        Remove-Item $StagingParent -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}
+$CleanHash = (Get-FileHash -Path $CleanZip -Algorithm SHA256).Hash
+Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-Linux-Clean.zip.sha256") -Value "$CleanHash  GoogleChrome-Portable-Linux-Clean.zip" -Encoding UTF8
+$CleanSize = [math]::Round(((Get-Item $CleanZip).Length / 1KB), 2)
+Write-Host "  * Clean Edition:    $CleanZip ($CleanSize KB)" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "         Build Completed! Both Linux ZIPs have clean enclosing root folder!     " -ForegroundColor Green
+Write-Host "         Build Completed! Both Linux ZIPs are 100% POSIX compliant!             " -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "Directory: $OutputDir" -ForegroundColor White
 Write-Host "1. Enhanced Edition : $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Yellow
