@@ -27,16 +27,43 @@ jobs:
           test -d "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
           codesign --verify --deep --strict --verbose=2 "Chrome-macOS/App/Chrome-bin/Google Chrome.app"
           codesign -dv --verbose=4 "Chrome-macOS/App/Chrome-bin/Google Chrome.app" 2>&1 | grep "EQHXZ8M8AV"
-          echo "=== 官方 Google LLC 签名验证 100% 通过 ==="
 
-      - name: 4. Test Chrome Binary Execution & Print Version
+      - name: 4. Test Chrome Execution & Capture Real Webpage Screenshot on Mac
         run: |
           CHROME_BIN="Chrome-macOS/App/Chrome-bin/Google Chrome.app/Contents/MacOS/Google Chrome"
+          USER_DATA_DIR="$(pwd)/Chrome-macOS/Data/UserData"
+          
+          echo "=== 1. 打印 Chrome 版本 ==="
           "$CHROME_BIN" --version
-          echo "=== 便携版 Chrome 成功执行并输出版本号 ==="
+          
+          echo "=== 2. 在 Mac 真实环境中启动 Chrome 并截取网页图片 ==="
+          "$CHROME_BIN" \
+            --headless=new \
+            --disable-gpu \
+            --no-sandbox \
+            --user-data-dir="$USER_DATA_DIR" \
+            --screenshot="macos_chrome_render.png" \
+            --window-size=1280,800 \
+            --no-first-run \
+            --no-default-browser-check \
+            https://example.com &
+          
+          CHROME_PID=$!
+          # 等待 6 秒完成页面加载与截图生成
+          sleep 6
+          kill -9 $CHROME_PID 2>/dev/null || true
+          
+          echo "=== 3. 检查截图文件大小与信息 ==="
+          ls -lh macos_chrome_render.png
+          file macos_chrome_render.png
 
       - name: 5. Test Compliance Report Generation
         run: |
           ./Chrome-macOS/App/Tools/generate-compliance-report.sh
           test -f "合规证明与安全审计报告.html"
-          echo "=== 安全与合规审计报告生成通过 ==="
+
+      - name: 6. Upload Real Mac Screenshot (供您直接下载查看真实 Mac 截图)
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-chrome-screenshot
+          path: macos_chrome_render.png
