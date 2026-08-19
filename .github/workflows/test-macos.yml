@@ -14,19 +14,18 @@ jobs:
 
       - name: 1. Setup Shell Permissions
         run: |
-          chmod +x Chrome-macOS/*.command Chrome-macOS/Installer/*.command Chrome-macOS/Installer/*.sh Chrome-macOS/App/*.sh Chrome-macOS/App/Tools/*.sh
+          chmod +x Chrome-macOS/*.command Chrome-macOS/Installer/*.sh Chrome-macOS/App/*.sh Chrome-macOS/App/Tools/*.sh
 
       - name: 2. Test Package Compliance Audit
         run: |
           ./Chrome-macOS/App/Tools/verify-package.sh
 
-      - name: 3. Test Installer Directory & Download Official Chrome DMG
+      - name: 3. Test One-Click Installer from Root Directory
         run: |
-          test -d "Chrome-macOS/Installer"
-          test -f "Chrome-macOS/Installer/一键安装配置.command"
-          test -f "Chrome-macOS/Installer/Installer.command"
+          test -f "Chrome-macOS/一键安装配置.command"
+          test -f "Chrome-macOS/Installer.command"
           test -f "Chrome-macOS/Installer/setup-chrome.sh"
-          ./Chrome-macOS/Installer/setup-chrome.sh --silent
+          ./Chrome-macOS/一键安装配置.command --silent
 
       - name: 4. Verify Apple codesign Digital Signature (Google LLC EQHXZ8M8AV)
         run: |
@@ -36,10 +35,10 @@ jobs:
           codesign -dv --verbose=4 "$CHROME_APP" 2>&1 | grep "EQHXZ8M8AV"
           echo "✓ Google LLC 官方开发者证书验证 100% 通过！"
 
-      - name: 5. Test [Enhanced Edition] Launch (With 3 Preloaded Extensions)
+      - name: 5. Test [Enhanced Edition] Launch from Root Directory
         run: |
-          echo "=== 测试【增强插件版】启动 ==="
-          ./Chrome-macOS/App/launch-chrome.sh --version
+          echo "=== 测试根目录【启动Chrome.command】(增强插件版) ==="
+          ./Chrome-macOS/启动Chrome.command --version
           test -d "Chrome-macOS/App/Extensions/DarkReader"
           test -d "Chrome-macOS/App/Extensions/KissTranslator"
           test -d "Chrome-macOS/App/Extensions/Violentmonkey"
@@ -53,7 +52,7 @@ jobs:
           cp -R Chrome-macOS/* "$CLEAN_TEST_DIR/"
           rm -rf "$CLEAN_TEST_DIR/App/Extensions/"*
           
-          "$CLEAN_TEST_DIR/App/launch-chrome.sh" --version
+          "$CLEAN_TEST_DIR/启动Chrome.command" --version
           test -d "$CLEAN_TEST_DIR/Data/UserData"
           echo "✓ 纯净无插件版启动与数据隔离 100% 成功！"
 
