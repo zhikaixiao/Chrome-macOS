@@ -5,7 +5,7 @@ on:
 
 jobs:
   macos-vnc:
-    runs-on: macos-13
+    runs-on: macos-latest
     timeout-minutes: 60
     steps:
       - name: Checkout repository
@@ -26,7 +26,8 @@ jobs:
       - name: 2. Setup Web-based noVNC & Cloudflare Tunnel
         run: |
           echo "=== 安装 websockify, noVNC 与 Cloudflare Tunnel ==="
-          pip3 install websockify
+          # 使用 homebrew 安装 websockify (macOS Apple Silicon 原生支持)
+          brew install websockify
           
           # 克隆 noVNC 网页客户端
           git clone --depth 1 https://github.com/novnc/noVNC.git /tmp/novnc
@@ -35,7 +36,7 @@ jobs:
           websockify --web /tmp/novnc 6080 localhost:5900 &
           sleep 2
           
-          # 检测架构下载对应的 cloudflared
+          # 下载 Cloudflare Tunnel (ARM64 / Apple Silicon)
           ARCH=$(uname -m)
           if [ "$ARCH" = "arm64" ]; then
             CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-arm64.tgz"
