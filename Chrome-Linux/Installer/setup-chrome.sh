@@ -168,8 +168,8 @@ try_install_via_rpm() {
 }
 
 install_chrome() {
-    local target_bin="$CHROME_BIN_DIR/google-chrome"
-    [ -f "$target_bin" ] || target_bin="$CHROME_BIN_DIR/chrome"
+    local target_bin="$CHROME_BIN_DIR/chrome"
+    [ -f "$target_bin" ] || target_bin="$CHROME_BIN_DIR/google-chrome"
     
     if [ -f "$target_bin" ] && [ "$FORCE_REINSTALL" = false ]; then
         echo -e "${BLUE}[2/4] 检测到便携版 Google Chrome 已就绪...${NC}"

@@ -12,10 +12,10 @@ APP_DIR="$ROOT_DIR/App"
 DATA_DIR="$ROOT_DIR/Data"
 USER_DATA_DIR="$DATA_DIR/UserData"
 CHROME_BIN_DIR="$APP_DIR/Chrome-bin"
-CHROME_BIN="$CHROME_BIN_DIR/google-chrome"
+CHROME_BIN="$CHROME_BIN_DIR/chrome"
 
 if [ ! -f "$CHROME_BIN" ]; then
-    CHROME_BIN="$CHROME_BIN_DIR/chrome"
+    CHROME_BIN="$CHROME_BIN_DIR/google-chrome"
 fi
 
 # 若尚未安装，自动引导执行一键安装配置
@@ -24,8 +24,8 @@ if [ ! -f "$CHROME_BIN" ]; then
     if [ -f "$ROOT_DIR/Installer/setup-chrome.sh" ]; then
         "$ROOT_DIR/Installer/setup-chrome.sh"
     fi
-    CHROME_BIN="$CHROME_BIN_DIR/google-chrome"
-    [ -f "$CHROME_BIN" ] || CHROME_BIN="$CHROME_BIN_DIR/chrome"
+    CHROME_BIN="$CHROME_BIN_DIR/chrome"
+    [ -f "$CHROME_BIN" ] || CHROME_BIN="$CHROME_BIN_DIR/google-chrome"
 fi
 
 mkdir -p "$USER_DATA_DIR"
