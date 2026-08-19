@@ -22,7 +22,7 @@ if (-not (Test-Path $OutputDir)) {
     New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
 }
 
-# Clean temporary files
+# Clean temporary files in source directory
 $CleanPaths = @(
     (Join-Path $SourceDir "App\Chrome-bin"),
     (Join-Path $SourceDir "Data\googlechrome.dmg"),
@@ -39,17 +39,12 @@ New-Item -Path (Join-Path $SourceDir "Data\UserData") -ItemType Directory -Force
 # 1. Build Enhanced Edition (with 3 extensions)
 Write-Host "[1/2] Packaging Enhanced Edition (with 3 extensions)..." -ForegroundColor Blue
 $EnhancedZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS-Enhanced.zip"
-$DefaultZip = Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip"
-
 if (Test-Path $EnhancedZip) { Remove-Item $EnhancedZip -Force }
-if (Test-Path $DefaultZip) { Remove-Item $DefaultZip -Force }
 
 Compress-Archive -Path "$SourceDir\*" -DestinationPath $EnhancedZip -CompressionLevel Optimal
-Copy-Item $EnhancedZip $DefaultZip -Force
 
 $EnhancedHash = (Get-FileHash -Path $EnhancedZip -Algorithm SHA256).Hash
 Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-macOS-Enhanced.zip.sha256") -Value "$EnhancedHash  GoogleChrome-Portable-macOS-Enhanced.zip" -Encoding UTF8
-Set-Content -Path (Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip.sha256") -Value "$EnhancedHash  GoogleChrome-Portable-macOS.zip" -Encoding UTF8
 
 $EnhancedSize = [math]::Round(((Get-Item $EnhancedZip).Length / 1MB), 2)
 Write-Host "  * Enhanced Edition: $EnhancedZip ($EnhancedSize MB)" -ForegroundColor Green
@@ -80,6 +75,9 @@ finally {
         Remove-Item $TempCleanDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
+
+# Clean any leftover legacy unnamed zip
+Remove-Item (Join-Path $OutputDir "GoogleChrome-Portable-macOS.zip*") -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "================================================================================" -ForegroundColor Cyan
